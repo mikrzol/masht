@@ -46,7 +46,7 @@ No installation is necessary - the package should work right away.
     foo@bar: python3 masht mash @test/args.txt
     ```
     will run masht mash with arguments provided in `args.txt` file within `./tests/` directory.
-    where `args.txt` should look something like this:
+    `args.txt` should look something like this:
     ```
     tests/data/seqs
     -s
