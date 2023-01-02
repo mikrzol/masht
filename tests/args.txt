@@ -1,4 +1,4 @@
-../server_data/seqs
+tests/data/seqs
 -s
 -o test_outputs
 -v

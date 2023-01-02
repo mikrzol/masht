@@ -27,6 +27,12 @@ No installation is necessary - the package should work right away.
     ```console
     foo@bar: python3 masht mash <path_to_file> -d
     ```
+    The `<path_to_file>` file should list filenames relative to current directory, e.g.:
+    ``` txt
+    tests/data/seqs/1.fastq
+    tests/data/seqs/3.fastq
+    tests/data/seqs/5.fastq
+    ```
 - basic mash sketching (of all files in the specified directory into one sketch):
     ```console
     foo@bar: python3 masht mash <path_to_dir> -s
@@ -40,7 +46,13 @@ No installation is necessary - the package should work right away.
     foo@bar: python3 masht mash @test/args.txt
     ```
     will run masht mash with arguments provided in `args.txt` file within `./tests/` directory.
-
+    where `args.txt` should look something like this:
+    ```
+    tests/data/seqs
+    -s
+    -o test_outputs
+    -v
+    ```
 
 ## Options (flags):
 - `-d`, `--distance`: calculate mash distances between the first and all of the rest of selected files
