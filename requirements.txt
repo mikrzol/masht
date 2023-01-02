@@ -1,0 +1,2 @@
+##### Basic requirements
+mash            # can use a standalone binary file instead

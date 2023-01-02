@@ -1,0 +1,3 @@
+tests/data/seqs/1.fastq
+tests/data/seqs/3.fastq
+tests/data/seqs/5.fastq
