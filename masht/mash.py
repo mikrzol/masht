@@ -40,9 +40,9 @@ def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', 
         if verbose:
             print(f"{proc.stdout.decode('utf-8')}", end='')
 
-        with open(f'{output_path}/distances.tsv', 'w') as out_f:
-            out_f.write('seq_A\tseq_B\tmash_dist\tp_val\tmatching_hashes\n')
-            out_f.write(f"{proc.stdout.decode('utf-8')}")
+        with open(f'{output_path}/distances.csv', 'w') as out_f:
+            out_f.write('seq_A,seq_B,mash_dist,p_val,matching_hashes\n')
+            out_f.write(proc.stdout.decode('utf-8').replace('\t', ','))
     print('Mash distances calculated!')
 
 
