@@ -73,7 +73,7 @@ def sketch(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.'
     pathlib.Path(output_path).mkdir(
         parents=True, exist_ok=True)
 
-    # move the *_sketches.msh files to a desired location (mash can only generate the sketch file to ./ )
+    # move the *_sketches.msh files to a desired location (mash can only generate the sketch file to ./ ) --> TESTING (acually, it does do that)
     sketch_path = ''
 
     # TESTING - bin loop will be removed later
