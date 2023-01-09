@@ -2,7 +2,7 @@ import subprocess
 import argparse
 import pathlib
 
-import mash
+import mash_copy as mash
 
 
 def main():
@@ -29,8 +29,6 @@ def main():
                           help='location of the output directory (default: ".")')
     detailed.add_argument('-v', '--verbose', action='store_true',
                           help='add more descriptions of performed actions')
-    detailed.add_argument('-i', '--info', action='store_true',
-                          help='show information on selected sketch files')
     detailed.add_argument(
         '-m', '--mash', help='run mash with specified params', type=str)
 
@@ -49,26 +47,26 @@ def main():
     pathlib.Path(f'{args.output_dir}').mkdir(
         parents=True, exist_ok=True)
 
-    # ORDER MATTERS
-    # sketch
-    sketch_path = ''
-    if args.sketch:
-        sketch_path = mash.sketch(bin_paths=bin_paths,
-                                  data_path=data_path, output_path=args.output_dir,
-                                  verbose=args.verbose)
+    # mash_copy run()
 
-    # info
-    if args.info:
-        mash.info(bin_paths=bin_paths, data_path=sketch_path or data_path)
+    mash.run(vars(args))
 
+    '''
     # dist
     if args.distance:
         mash.dist(bin_paths=bin_paths, data_path=data_path,
                   output_path=args.output_dir, verbose=args.verbose)
 
+    # sketch
+    if args.sketch:
+        mash.sketch(bin_paths=bin_paths,
+                    data_path=data_path, output_path=args.output_dir,
+                    verbose=args.verbose)
+
     # mash (fully custom)
     if args.mash:
         subprocess.run(args.mash.split())
+    '''
 
 
 if __name__ == '__main__':
