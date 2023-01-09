@@ -37,6 +37,14 @@ No installation is necessary - the package should work right away.
     ```console
     foo@bar: python3 masht mash <path_to_dir> -s
     ```
+- mash sketching, saving to specified folder and viewing information on these sketches:
+    ```console
+    foo@bar: python3 masht mash <path_to_dir> -s -i -o <output_dir>
+    ```
+- viewing info on all sketches in a folder:
+    ```console
+    foo@bar: python3 masht mash <path_to_dir> -i
+    ```
 - parameters and options can be specified in a text file. Use `@<file_name>` to point to the file:
     ```console
     foo@bar: python3 masht mash @<file_name>
@@ -46,7 +54,7 @@ No installation is necessary - the package should work right away.
     foo@bar: python3 masht mash @test/args.txt
     ```
     will run masht mash with arguments provided in `args.txt` file within `./tests/` directory.
-    `args.txt` should look something like this:
+    `args.txt` should look something like this (note that there should be no trailing spaces on any of the lines!):
     ```
     tests/data/seqs
     -s

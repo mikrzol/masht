@@ -14,7 +14,7 @@ def _get_files(data_path: pathlib.Path) -> list[str]:
     files = []
     if data_path.is_file():
         with data_path.open('r') as in_f:
-            files = in_f.read().strip().split()
+            files = [pathlib.Path(f) for f in in_f.read().strip().split()]
     else:
         files = list(data_path.iterdir())
 
@@ -22,12 +22,12 @@ def _get_files(data_path: pathlib.Path) -> list[str]:
 
 
 def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
-    """calculate mash distance on between wanted files and save result to {output_path}/distances.csv
+    """calculate mash distance on between wanted files and save result to {output_path}/distances.tsv
 
     Args:
         paths (list[str]) [testing var]: list of paths with mash binary
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
-        output_path (str, optional):  location of the directory to put the results.csv file into. Defaults to '.'
+        output_path (str, optional):  location of the directory to put the results.tsv file into. Defaults to '.'
         verbose (bool, optional): increase verbosity. Defaults to False.
     """
     print('\nCalculating mash distances...')
@@ -40,9 +40,9 @@ def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', 
         if verbose:
             print(f"{proc.stdout.decode('utf-8')}", end='')
 
-        with open(f'{output_path}/distances.csv', 'w') as out_f:
+        with open(f'{output_path}/distances.tsv', 'w') as out_f:
             out_f.write('seq_A,seq_B,mash_dist,p_val,matching_hashes\n')
-            out_f.write(proc.stdout.decode('utf-8').replace('\t', ','))
+            out_f.write(proc.stdout.decode('utf-8'))
     print('Mash distances calculated!')
 
 
@@ -96,12 +96,28 @@ def info(bin_paths: list[str], data_path: str or pathlib.Path):
         bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
         data_path (str or pathlib.Path): location of the sketch files
     """
+    def _get_info_on_all_files(data_path: pathlib.Path):
+        files = _get_files(data_path)
+        # TESTING - remove paths loop later
+        for path in bin_paths:
+            for file in files:
+                if file.suffix == '.msh':
+                    print(f'============= {file}: =============')
+                    subprocess.run([f'{path}mash', 'info',
+                                    file],
+                                   capture_output=False)
+
     if type(data_path) is str:  # i.e. sketch was called prior
         data_path = pathlib.Path(data_path)
 
-    # TESTING - remove path loop later
-    types = ['old', 'new']
-    for path, typ in zip(bin_paths, types):
-        subprocess.run([f'{path}mash', 'info',
-                        data_path],
-                       capture_output=False)
+    if data_path.is_file():
+        if data_path.suffix == '.msh':
+            # TESTING - remove paths loop later
+            for path in bin_paths:
+                subprocess.run([f'{path}mash', 'info',
+                                data_path],
+                               capture_output=False)
+        else:
+            _get_info_on_all_files(data_path)
+    else:
+        _get_info_on_all_files(data_path)

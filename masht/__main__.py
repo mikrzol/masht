@@ -13,7 +13,7 @@ def main():
     subparsers = global_parser.add_subparsers(
         title='subcommands', help='available subcommands')
 
-    # mash subcommand
+    # MASH SUBCOMMAND
     mash_parser = subparsers.add_parser('mash', help='use the mash module')
     basic = mash_parser.add_argument_group('basic use')
     basic.add_argument('in_d',
