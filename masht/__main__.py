@@ -31,6 +31,10 @@ def main():
                           help='add more descriptions of performed actions')
     detailed.add_argument('-i', '--info', action='store_true',
                           help='show information on selected sketch files')
+    detailed.add_argument('-b', '--bounds', action='store_true',
+                          help='show Mash error bounds of selected files')
+    detailed.add_argument('-t', '--triangle', action='store_true',
+                          help='generate matrix of distances in a sketch')
     detailed.add_argument(
         '-m', '--mash', help='run mash with specified params', type=str)
 
@@ -56,15 +60,26 @@ def main():
         sketch_path = mash.sketch(bin_paths=bin_paths,
                                   data_path=data_path, output_path=args.output_dir,
                                   verbose=args.verbose)
-
+    if sketch_path:
+        sketch_path = pathlib.Path(sketch_path)
     # info
     if args.info:
         mash.info(bin_paths=bin_paths, data_path=sketch_path or data_path)
 
+    # bounds
+    if args.bounds:
+        # TODO add sketch_path to bounds options
+        mash.bounds(bin_paths=bin_paths, data_path=data_path,
+                    output_path=args.output_dir, verbose=args.verbose)
     # dist
     if args.distance:
         mash.dist(bin_paths=bin_paths, data_path=data_path,
                   output_path=args.output_dir, verbose=args.verbose)
+
+    # triangle
+    if args.triangle:
+        mash.triangle(bin_paths=bin_paths, data_path=sketch_path or data_path,
+                      output_path=args.output_dir, verbose=args.verbose)
 
     # mash (fully custom)
     if args.mash:
