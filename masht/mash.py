@@ -25,14 +25,16 @@ def _get_files(data_path: pathlib.Path) -> list[str]:
     return files
 
 
-def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib.Path], mash_cmd: str, verbose: bool = False, output_path: str = '.') -> None:
+def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib.Path], mash_cmd: str, query: pathlib.Path = '', verbose: bool = False, output_path: str = '.') -> None:
     """helper funcion for looping over sketch files and applying chosen mash command
 
     Args:
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
         bin_paths (list[pathlib.Path]): location of the mash binary files (TESTING - remove this later)
-        mash_func (str): mash command to perform on each file
+        mash_cmd (str): mash command to perform on each file
+        query (pathlib.Path): location of the query file (for screen command only)
         verbose (bool, optional): whether to print more info into terminal. Defaults to False.
+        output_path (str): location of the folder to put the results into
     """
     # dict for storing names of commands that only print to the console
     console_only = {
@@ -48,9 +50,17 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
         for file in files:
             if file.suffix == '.msh':
                 print(f'============= {file}: =============')
-                proc = subprocess.run([f'{path}mash', mash_cmd,
-                                       file],
-                                      capture_output=True)
+                # TODO adding query to the run command - will other things break?
+                if query:
+                    query_files = _get_files(query)
+                    print(*query_files)
+                    proc = subprocess.run([f'{path}mash', mash_cmd,
+                                           file, *query_files],
+                                          capture_output=True)
+                else:
+                    proc = subprocess.run([f'{path}mash', mash_cmd,
+                                           file],
+                                          capture_output=True)
 
                 if console_only.get(mash_cmd) or verbose:
                     print(f"{proc.stdout.decode('utf-8')}", end='')
@@ -109,8 +119,6 @@ def info(bin_paths: list[str], data_path: str or pathlib.Path):
 
     # TESTING can remove this types of messages later
     print('Information on selected files:')
-    if type(data_path) is str:  # i.e. sketch was called prior
-        data_path = pathlib.Path(data_path)
 
     _loop_over_all_sketch_files(
         data_path, bin_paths, 'info')
@@ -200,15 +208,30 @@ def paste(bin_paths: list[str], data_path: pathlib.Path, file_name: str, output_
                            capture_output=True)
 
 
-def screen(bin_paths: list[str], data_path: pathlib.Path):
+def screen(bin_paths: list[str], data_path: pathlib.Path, query: pathlib.Path):
+    """determine whether query files are within selected .msh files
+
+    Args:
+        bin_paths (list[str]): paths to binaries of mash TESTING - remove later
+        data_path (pathlib.Path): input location
+        query (pathlib.Path): location of query file[s]. Can be a single file, directory or file with relative paths to selected files.
+    """
     # TESTING can remove this types of messages later
     print('Screening selected files:')
 
     _loop_over_all_sketch_files(
-        data_path, bin_paths, 'screen')
+        data_path, bin_paths, 'screen', query=query)
 
 
 def triangle(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
+    """create matrix of distances between all of the sequences in a sketch to all others in this file
+
+    Args:
+        bin_paths (list[str]): paths to binaries of mash TESTING - remove this later
+        data_path (pathlib.Path): input location
+        output_path (str, optional): location of the output directory. Defaults to '.'.
+        verbose (bool, optional): whether to give more info on performed operations to the console. Defaults to False.
+    """
     print('Matrix of distances between sequences in selected files:')
     _loop_over_all_sketch_files(data_path=data_path, bin_paths=bin_paths,
                                 mash_cmd='triangle', verbose=verbose, output_path=output_path)

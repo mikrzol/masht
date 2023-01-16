@@ -21,24 +21,26 @@ def main():
                            files or 2) the file with names of selected files \
                                (names are relative to package location)')
     detailed = mash_parser.add_argument_group('detailed use')
-    detailed.add_argument('-d', '--distance', action='store_true',
-                          help='calculate distance between selected files')
-    detailed.add_argument('-s', '--sketch', action='store_true',
-                          help='generate mash sketches of selected files')
-    detailed.add_argument('-o', '--output_dir', default='./',
-                          help='location of the output directory (default: ".")')
-    detailed.add_argument('-v', '--verbose', action='store_true',
-                          help='add more descriptions of performed actions')
-    detailed.add_argument('-i', '--info', action='store_true',
-                          help='show information on selected sketch files')
     detailed.add_argument('-b', '--bounds', action='store_true',
                           help='show Mash error bounds of selected files')
-    detailed.add_argument('-t', '--triangle', action='store_true',
-                          help='generate matrix of distances in a sketch')
+    detailed.add_argument('-d', '--distance', action='store_true',
+                          help='calculate distance between selected files')
+    detailed.add_argument('-i', '--info', action='store_true',
+                          help='show information on selected sketch files')
+    detailed.add_argument('-m', '--mash', help='run mash with specified params',
+                          type=str)
+    detailed.add_argument('-o', '--output_dir', default='./',
+                          help='location of the output directory (default: ".")')
     detailed.add_argument('-p', '--paste',
                           help='paste multiple sketch files into a new one')
-    detailed.add_argument(
-        '-m', '--mash', help='run mash with specified params', type=str)
+    detailed.add_argument('-s', '--sketch', action='store_true',
+                          help='generate mash sketches of selected files')
+    detailed.add_argument('-sc', '--screen',
+                          help='determine whether query sequences are within a sketch file')
+    detailed.add_argument('-t', '--triangle', action='store_true',
+                          help='generate matrix of distances in a sketch')
+    detailed.add_argument('-v', '--verbose', action='store_true',
+                          help='add more descriptions of performed actions')
 
     # parse args
     args = global_parser.parse_args()
@@ -87,6 +89,11 @@ def main():
     if args.paste:
         mash.paste(bin_paths=bin_paths, data_path=data_path,
                    output_path=args.output_dir, file_name=args.paste)
+
+    # screen
+    if args.screen:
+        mash.screen(bin_paths=bin_paths,
+                    data_path=data_path, query=pathlib.Path(args.screen))
 
     # mash (fully custom)
     if args.mash:
