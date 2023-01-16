@@ -36,7 +36,8 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
     """
     # dict for storing names of commands that only print to the console
     console_only = {
-        'info': 1
+        'info': 1,
+        'screen': 1
     }
 
     # get files
@@ -60,6 +61,14 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
 
 
 def bounds(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
+    """calculate error bounds of selected sketches file[s]
+
+    Args:
+        bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
+        data_path (pathlib.Path): location of the sketch files
+        output_path (str, optional): location of the report file. Defaults to '.'.
+        verbose (bool, optional): whether to give more info in the console. Defaults to False.
+    """
     print('Error bounds of selected file[s]:')
     _loop_over_all_sketch_files(data_path=data_path, bin_paths=bin_paths,
                                 mash_cmd='bounds', verbose=verbose, output_path=output_path)
@@ -69,7 +78,7 @@ def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', 
     """calculate mash distance on between wanted files and save result to {output_path}/distances.tsv
 
     Args:
-        paths (list[str]) [testing var]: list of paths with mash binary
+        bin_paths (list[str]) [testing var]: list of paths with mash binary
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
         output_path (str, optional):  location of the directory to put the results.tsv file into. Defaults to '.'
         verbose (bool, optional): increase verbosity. Defaults to False.
@@ -90,13 +99,30 @@ def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', 
     print('Mash distances calculated!')
 
 
+def info(bin_paths: list[str], data_path: str or pathlib.Path):
+    """show info on selected sketch (.msh) files
+
+    Args:
+        bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
+        data_path (str or pathlib.Path): location of the sketch files
+    """
+
+    # TESTING can remove this types of messages later
+    print('Information on selected files:')
+    if type(data_path) is str:  # i.e. sketch was called prior
+        data_path = pathlib.Path(data_path)
+
+    _loop_over_all_sketch_files(
+        data_path, bin_paths, 'info')
+
+
 def sketch(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> str:
     """
     apply mash sketch on given files if data_path leads to a single file or all files in a dir if it leads to a dir \
             and save result to {output_path}/sketches.msh
 
     Args:
-        paths (list[str]) [testing var]: list of paths with mash binary
+        bin_paths (list[str]) [testing var]: list of paths with mash binary
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
         output_path (str, optional): location of the directory to put the sketches.msh file into. Defaults to '.'
         verbose: increase verbosity
@@ -133,21 +159,53 @@ def sketch(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.'
     return sketch_path
 
 
-def info(bin_paths: list[str], data_path: str or pathlib.Path):
-    """show info on selected sketch (.msh) files
+def paste(bin_paths: list[str], data_path: pathlib.Path, file_name: str, output_path: str = '.') -> None:
+    """paste one multiple sketch files into a new one
 
     Args:
         bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
-        data_path (str or pathlib.Path): location of the sketch files
+        data_path (pathlib.Path): location of the sketch files
+        file_name (str): name of the new file
+        output_path (str, optional): name of the new sketch file. Defaults to '.'.
     """
+    if data_path.is_file():
+        # txt file
+        if data_path.suffix != '.msh':
+            files = _get_files(data_path)
+            # TESTING - remove paths loop later
+            types = ['old', 'new']
+            for path, type in zip(bin_paths, types):
+                subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+                                *files,
+                                ],
+                               capture_output=True)
+        # .msh file
+        else:
+            # TESTING - remove paths loop later
+            types = ['old', 'new']
+            for path, type in zip(bin_paths, types):
+                subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+                                data_path,
+                                ],
+                               capture_output=True)
+    # dir
+    else:
+        files = [file for file in data_path.iterdir() if file.suffix == '.msh']
+        # TESTING - remove paths loop later
+        types = ['old', 'new']
+        for path, type in zip(bin_paths, types):
+            subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+                            *files,
+                            ],
+                           capture_output=True)
 
+
+def screen(bin_paths: list[str], data_path: pathlib.Path):
     # TESTING can remove this types of messages later
-    print('Information on selected files:')
-    if type(data_path) is str:  # i.e. sketch was called prior
-        data_path = pathlib.Path(data_path)
+    print('Screening selected files:')
 
     _loop_over_all_sketch_files(
-        data_path, bin_paths, 'info')
+        data_path, bin_paths, 'screen')
 
 
 def triangle(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:

@@ -35,6 +35,8 @@ def main():
                           help='show Mash error bounds of selected files')
     detailed.add_argument('-t', '--triangle', action='store_true',
                           help='generate matrix of distances in a sketch')
+    detailed.add_argument('-p', '--paste',
+                          help='paste multiple sketch files into a new one')
     detailed.add_argument(
         '-m', '--mash', help='run mash with specified params', type=str)
 
@@ -80,6 +82,11 @@ def main():
     if args.triangle:
         mash.triangle(bin_paths=bin_paths, data_path=sketch_path or data_path,
                       output_path=args.output_dir, verbose=args.verbose)
+
+    # paste
+    if args.paste:
+        mash.paste(bin_paths=bin_paths, data_path=data_path,
+                   output_path=args.output_dir, file_name=args.paste)
 
     # mash (fully custom)
     if args.mash:

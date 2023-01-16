@@ -1,1 +1,2 @@
 test_outputs/old_sketches.msh
+test_outputs/one_sketch.msh
