@@ -45,6 +45,15 @@ No installation is necessary - the package should work right away.
     ```console
     foo@bar: python3 masht mash <path_to_dir> -i
     ```
+- calculating distances between all sequences in a selected sketch (lower portion of the distance matrix) and printing it to console:
+    ```console
+    foo@bar: python3 masht mash <chosen_.msh_file> -t -v
+    ```
+- `--info` and `--triangle` options automatically work on the sketch file generated in the same command, e.g.:
+    ```console
+    foo@bar: python3 masht mash <dir_with_input_sequences> -s -t -i -o <output_dir>
+    ```
+    will create the sketch (.msh) file of all files within `dir_with_input_sequences/`, show information on them to the console and generate a `sketches_triangle.txt` report file. The files will be stored in the `output_dir/`. 
 - parameters and options can be specified in a text file. Use `@<file_name>` to point to the file:
     ```console
     foo@bar: python3 masht mash @<file_name>
@@ -62,13 +71,18 @@ No installation is necessary - the package should work right away.
     -v
     ```
 
-## Options (flags):
-- `-d`, `--distance`: calculate mash distances between the first and all of the rest of selected files
-- `-s`, `--sketch`: create sketches of selected files
-- `-o`, `--output_dir`: location of output directory (default: '.')
-- `-v`, `--verbose`: add more descriptions of performed actions
-- `-m`, `--mash`: run mash with specified params (point to a mash binary in the beginning)
-
+#### mash options (flags):
+|option|long name|description|
+|---|---|---|
+|`-b`|`--bounds`|calculate Mash error bounds of selected files|
+|`-d`|`--distance`|calculate mash distances between the first and all of the rest of selected files|
+|`-i`|`--info`|show information on selected sketch files|
+|`-m`|`--mash`|run mash with specified params (point to a mash binary in the beginning)|
+|`-o`|`--output_dir`|location of output directory (default: '.')|
+|`-s`|`--sketch`|create sketches of selected files|
+|`-sc`|`--screen`|determine whether query sequences are within a sketch file|
+|`-t`|`--triangle`|generate matrix of distances in a sketch|
+|`-v`|`--verbose`|print more descriptions of performed actions to the console|
 
 
 ## Help
