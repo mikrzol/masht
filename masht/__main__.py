@@ -72,8 +72,7 @@ def main():
 
     # bounds
     if args.bounds:
-        # TODO add sketch_path to bounds options
-        mash.bounds(bin_paths=bin_paths, data_path=data_path,
+        mash.bounds(bin_paths=bin_paths, data_path=sketch_path or data_path,
                     output_path=args.output_dir, verbose=args.verbose)
     # dist
     if args.distance:

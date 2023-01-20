@@ -71,7 +71,7 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
 
 
 def bounds(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
-    """calculate error bounds of selected sketches file[s]
+    """calculate error bounds of selected sketch file[s]
 
     Args:
         bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
