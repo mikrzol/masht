@@ -50,17 +50,27 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
         for file in files:
             if file.suffix == '.msh':
                 print(f'============= {file}: =============')
-                # TODO adding query to the run command - will other things break?
                 if query:
                     query_files = _get_files(query)
                     print(*query_files)
                     proc = subprocess.run([f'{path}mash', mash_cmd,
                                            file, *query_files],
                                           capture_output=True)
+                    if proc.returncode != 0:
+                        print(
+                            f'MASH {mash_cmd} encountered an error, see below:\n')
+                        print(proc.stderr.decode())
+                        return
+
                 else:
                     proc = subprocess.run([f'{path}mash', mash_cmd,
                                            file],
                                           capture_output=True)
+                    if proc.returncode != 0:
+                        print(
+                            f'MASH {mash_cmd} encountered an error, see below:\n')
+                        print(proc.stderr.decode())
+                        return
 
                 if console_only.get(mash_cmd) or verbose:
                     print(f"{proc.stdout.decode('utf-8')}", end='')
@@ -100,6 +110,11 @@ def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', 
                                *files],
                               capture_output=True
                               )
+        if proc.returncode != 0:
+            print('MASH dist encountered an error, see below:\n')
+            print(proc.stderr.decode())
+            return
+
         if verbose:
             print(f"{proc.stdout.decode('utf-8')}", end='')
 
@@ -142,11 +157,19 @@ def sketch(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.'
 
     # TESTING - remove path loop later
     for path, type in zip(bin_paths, types):
-        subprocess.run([f'{path}mash', 'sketch',
-                        *files,
-                        '-o', f'{type}_sketches'
-                        ],
-                       capture_output=not verbose)
+        proc = subprocess.run([f'{path}mash', 'sketch',
+                               *files,
+                               '-o', f'{type}_sketches'
+                               ],
+                              capture_output=True)
+        if proc.returncode != 0:
+            print(f'Encountered {proc.returncode} error, see below:\n')
+            print(proc.stderr.decode())
+            print('Terminating sketching...')
+            return
+
+        if verbose:
+            print(proc.stdout.decode())
 
     pathlib.Path(output_path).mkdir(
         parents=True, exist_ok=True)
@@ -183,29 +206,41 @@ def paste(bin_paths: list[str], data_path: pathlib.Path, file_name: str, output_
             # TESTING - remove paths loop later
             types = ['old', 'new']
             for path, type in zip(bin_paths, types):
-                subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
-                                *files,
-                                ],
-                               capture_output=True)
+                proc = subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+                                       *files,
+                                       ],
+                                      capture_output=True)
+                if proc.returncode != 0:
+                    print(f'MASH paste encountered an error, see below:\n')
+                    print(proc.stderr.decode())
+                    return
         # .msh file
         else:
             # TESTING - remove paths loop later
             types = ['old', 'new']
             for path, type in zip(bin_paths, types):
-                subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
-                                data_path,
-                                ],
-                               capture_output=True)
+                proc = subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+                                       data_path,
+                                       ],
+                                      capture_output=True)
+                if proc.returncode != 0:
+                    print(f'MASH paste encountered an error, see below:\n')
+                    print(proc.stderr.decode())
+                    return
     # dir
     else:
         files = [file for file in data_path.iterdir() if file.suffix == '.msh']
         # TESTING - remove paths loop later
         types = ['old', 'new']
         for path, type in zip(bin_paths, types):
-            subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
-                            *files,
-                            ],
-                           capture_output=True)
+            proc = subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+                                   *files,
+                                   ],
+                                  capture_output=True)
+            if proc.returncode != 0:
+                print(f'MASH paste encountered an error, see below:\n')
+                print(proc.stderr.decode())
+                return
 
 
 def screen(bin_paths: list[str], data_path: pathlib.Path, query: pathlib.Path):
