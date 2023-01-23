@@ -25,6 +25,20 @@ def _get_files(data_path: pathlib.Path) -> list[str]:
     return files
 
 
+def _format_triangle_output(text: str) -> str:
+    from itertools import combinations
+
+    text = [line.split('\t') for line in text.strip().split('\n')]
+    samples = [line[0] for line in text[1:]]
+    values = [el for line in text[2:] for el in line[1:]]
+
+    combs = [f'{line[0]}\t{line[1]}' for line in combinations(samples, r=2)]
+    final = ['seq_A\tseq_B\tdistance'] + \
+        ['\t'.join(el) for el in zip(combs, values)]
+
+    return final
+
+
 def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib.Path], mash_cmd: str, query: pathlib.Path = '', verbose: bool = False, output_path: str = '.') -> None:
     """helper funcion for looping over sketch files and applying chosen mash command
 
@@ -76,8 +90,13 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
                     print(f"{proc.stdout.decode('utf-8')}", end='')
 
                 if not console_only.get(mash_cmd):
-                    with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.txt', 'w') as out_f:
-                        out_f.write(proc.stdout.decode('utf-8'))
+                    if mash_cmd == 'triangle':
+                        with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.tsv', 'w') as out_f:
+                            out_f.write('\n'.join(_format_triangle_output(
+                                proc.stdout.decode('utf-8'))))
+                    else:
+                        with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.txt', 'w') as out_f:
+                            out_f.write(proc.stdout.decode('utf-8'))
 
 
 def bounds(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
