@@ -14,7 +14,7 @@ def _get_files(data_path: pathlib.Path) -> list[str]:
     files = []
     if data_path.is_file():
         # TESTING - temporary (?) solution for when file leads to .msh
-        if data_path.suffix != '.msh':
+        if data_path.suffix == '.txt':
             with data_path.open('r') as in_f:
                 files = [pathlib.Path(f) for f in in_f.read().strip().split()]
         else:
@@ -66,7 +66,6 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
                 print(f'============= {file}: =============')
                 if query:
                     query_files = _get_files(query)
-                    print(*query_files)
                     proc = subprocess.run([f'{path}mash', mash_cmd,
                                            file, *query_files],
                                           capture_output=True)
