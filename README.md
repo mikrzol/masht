@@ -33,6 +33,7 @@ No installation is necessary - the package should work right away.
     tests/data/seqs/3.fastq
     tests/data/seqs/5.fastq
     ```
+    NB - the `<path_to_file>` file has to have a .txt extension!
 - basic mash sketching (of all files in the specified directory into one sketch):
     ```console
     foo@bar: python3 masht mash <path_to_dir> -s
@@ -53,7 +54,7 @@ No installation is necessary - the package should work right away.
     ```console
     foo@bar: python3 masht mash <dir_with_input_sequences> -s -t -i -o <output_dir>
     ```
-    will create the sketch (.msh) file of all files within `dir_with_input_sequences/`, show information on them to the console and generate a `sketches_triangle.txt` report file. The files will be stored in the `output_dir/`. 
+    will create the sketch (.msh) file of all files within `dir_with_input_sequences/`, show information on them to the console and generate a `sketches_triangle.tsv` report file. The files will be stored in the `output_dir/`. 
 - parameters and options can be specified in a text file. Use `@<file_name>` to point to the file:
     ```console
     foo@bar: python3 masht mash @<file_name>
