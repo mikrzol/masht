@@ -1,2 +1,7 @@
 ##### Basic requirements
 mash            # can use a standalone binary file instead
+
+#### Python requirements
+scikit-bio      # required for stats::pcoa
+pandas
+numpy
