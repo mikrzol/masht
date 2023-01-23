@@ -26,6 +26,14 @@ def _get_files(data_path: pathlib.Path) -> list[str]:
 
 
 def _format_triangle_output(text: str) -> str:
+    """Format the triangle command output for .tsv structure
+
+    Args:
+        text (str): mash triangle command output 
+
+    Returns:
+        str: formatted (.tsv style) output
+    """
     from itertools import combinations
 
     text = [line.split('\t') for line in text.strip().split('\n')]
