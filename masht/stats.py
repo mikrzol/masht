@@ -26,7 +26,7 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, verbose: bool = Fals
         df = pd.read_csv(file, sep='\t')
         df = _get_full_dist_matrix(df)
 
-        res = skb_pcoa(df, number_of_dimensions=2)
+        res = skb_pcoa(df)
 
         if verbose:
             print(f'********** {file.name.split(".")[0]} **********')
@@ -38,6 +38,24 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, verbose: bool = Fals
             print(res.proportion_explained)
 
         # create results file
+
+        '''
+        with open(f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.txt', 'w') as out_fh:
+            out_fh.write(res.samples.to_string())
+        with open(f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.txt', 'w') as out_fh:
+            out_fh.write(res.eigvals.to_string())
+        with open(f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.txt', 'w') as out_fh:
+            out_fh.write(res.proportion_explained.to_string())
+        '''
+        res.samples.to_csv(
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.csv')
+        res.eigvals.to_csv(
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.csv')
+        res.proportion_explained.to_csv(
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.csv')
+
+        # TODO do we want to produce a singular results file?
+        '''  
         with open(f'{output_dir}/{file.name.split(".")[0]}_pcoa_results.txt', 'w') as out_fh:
             out_fh.write(
                 '========== Coordinates of samples in the ordination space: ==========\n')
@@ -46,7 +64,10 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, verbose: bool = Fals
             out_fh.write(res.eigvals.to_string())
             out_fh.write('\n\n========== Proportion explained: ==========\n')
             out_fh.write(res.proportion_explained.to_string())
+        '''
 
 
+'''
 pcoa(pathlib.Path('test_outputs/old_sketches_triangle.tsv'),
      pathlib.Path('test_outputs/'), True)
+'''
