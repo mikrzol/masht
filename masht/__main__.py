@@ -7,14 +7,28 @@ import stats
 
 
 def perform_stats(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
-    # TODO add function delegation in stats module
+    """perform the stats subcommand
+
+    Args:
+        args (argparse.ArgumentParser): args created in the main function
+        bin_paths (list[str]): directory with the mash binary (obsolete)
+        data_path (pathlib.Path): location of the dir/ path with files to work on
+    """
+    if args.n_dimensions:
+        args.n_dimensions = int(args.n_dimensions)
     if args.pcoa:
-        stats.pcoa(data_path=data_path, output_dir=args.output_dir,
+        stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions, plot=args.draw_plot,
                    verbose=args.verbose)
-    return
 
 
 def perform_mash(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
+    """perform mash command
+
+    Args:
+        args (argparse.ArgumentParser): args created in the main function
+        bin_paths (list[str]): directory with the mash binary
+        data_path (pathlib.Path): location of the dir/ path with files to work on
+    """
     # ORDER MATTERS
     # sketch
     sketch_path = ''
@@ -71,6 +85,10 @@ def main():
                               help='location of 1) the folder with FASTQ or FASTA \
                            files or 2) the file with names of selected files \
                                (names are relative to package location)')
+    stats_parser.add_argument(
+        '-d', '--draw_plot', action='store_true', help='draw plots for performed analyses')
+    stats_parser.add_argument('-n', '--n_dimensions', default=None,
+                              help='number of target dimensions for PCoA analysis')
     stats_parser.add_argument('-o', '--output_dir', default='./',
                               help='location of the output directory (default: ".")')
     stats_parser.add_argument('-p', '--pcoa', action='store_true',
@@ -78,6 +96,7 @@ def main():
     stats_parser.add_argument('-v', '--verbose', action='store_true',
                               help='add more descriptions of performed actions')
 
+    # set function to perform when calling the command
     stats_parser.set_defaults(func=perform_stats)
 
     # MASH SUBCOMMAND
@@ -109,9 +128,9 @@ def main():
     detailed.add_argument('-v', '--verbose', action='store_true',
                           help='add more descriptions of performed actions')
 
+    # set function to perform when calling the command
     mash_parser.set_defaults(func=perform_mash)
 
-    # TODO can i use detalied_parser.parse_args() for the mash section to forward only that to the relevant function?
     # parse args
     args = global_parser.parse_args()
 
@@ -133,6 +152,7 @@ def main():
     # STATS
     # perform_stats(args=args, bin_paths=bin_paths, data_path=data_path)
 
+    # perform appropriate function
     args.func(args, bin_paths, data_path)
 
 
