@@ -3,6 +3,56 @@ from mash import _get_files
 import pandas as pd
 
 
+def anova(data_path: pathlib.Path, groups_file: str, mode: str, output_dir: pathlib.Path, plot: bool = False, verbose: bool = False):
+
+    # get df
+    files = _get_files(data_path)
+    for file in files:
+        # load in triangle file and clean it
+        df = pd.read_csv(file, index_col=0)
+        '''
+        df.index = [x.split('/')[-1] for x in df.index]
+        df.columns = [x.split('/')[-1] for x in df.columns]
+        '''
+
+        groups = pd.read_csv(groups_file, sep='\t')
+        groups = groups.set_index('file')
+        aov_df = pd.merge(groups, df, left_index=True, right_index=True)
+
+        if mode == 'twoway':
+            import statsmodels.api as sm
+            from statsmodels.formula.api import ols
+
+            # perform two-way ANOVAs
+            for col in aov_df.columns[2:]:
+                # TESTING - add '+ A:B' to anova formula below!!!
+                model = ols(f'{col} ~ A + B', data=aov_df).fit()
+
+                if verbose:
+                    print(f'ANOVA two-way ({col}):')
+                    print(sm.stats.anova_lm(model, typ=2))
+                    print()
+
+                sm.stats.anova_lm(model, typ=2).to_csv(
+                    f'{output_dir}/aov_two-way_{col}.tsv', sep='\t')
+
+        elif mode == 'repeat':
+            from statsmodels.stats.anova import AnovaRM
+            aovs = pd.DataFrame(
+                columns=['F Value', 'Num DF', 'Den DF', 'Pr > F'])
+            for col in aov_df.columns[2:]:
+                temp = AnovaRM(data=aov_df, depvar=col,
+                               subject='A', within=['B']).fit()
+                temp.anova_table.index = [col]
+                aovs = pd.concat([aovs, temp.anova_table])
+
+            if verbose:
+                print('ANOVA repeated:')
+                print(aovs)
+
+            aovs.to_csv(f'{output_dir}/aov_repeated.tsv', sep='\t')
+
+
 def _get_full_dist_matrix(df: pd.DataFrame) -> pd.DataFrame:
     """convert triangle matrix to full distance matrix
 
@@ -48,7 +98,7 @@ def plot_pcoa(res, names: list[str], output_dir: pathlib.Path) -> None:
     plt.savefig(f'{str(output_dir)}/pcoa_plot.png', bbox_inches='tight')
 
 
-def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, verbose: bool = False) -> None:
+def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, verbose: bool = False) -> str:
     """perform PCoA of data obtained in the mash.triangle function
 
     Args:
@@ -60,12 +110,22 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
     import pandas as pd
     from skbio.stats.ordination import pcoa as skb_pcoa
 
+    last_result = ''  # location of file to perform ANOVA later if chosen
     files = _get_files(data_path)
     for file in files:
         df = pd.read_csv(file, sep='\t')
         df = _get_full_dist_matrix(df)
 
         res = skb_pcoa(df, number_of_dimensions=n_dim or len(df))
+        # rename rows
+        res.samples.index = [x.split('/')[-1] for x in df.columns]
+        res.eigvals.rename('eigenval', inplace=True)
+        res.proportion_explained.rename('proportion_explained', inplace=True)
+        # clean results
+        if not n_dim:
+            res.samples.drop(res.samples.columns[-1], axis=1, inplace=True)
+            res.eigvals = res.eigvals[:-1]
+            res.proportion_explained = res.proportion_explained[:-1]
 
         if verbose:
             print(f'********** {file.name.split(".")[0]} **********')
@@ -83,8 +143,11 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
 
         # create results file
         res.samples.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.csv')
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.csv', sep='\t')
+        last_result = f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.csv'
         res.eigvals.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.csv')
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.tsv', sep='\t')
         res.proportion_explained.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.csv')
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.csv', sep='\t')
+
+    return last_result

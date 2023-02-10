@@ -16,9 +16,17 @@ def perform_stats(args: argparse.ArgumentParser, bin_paths: list[str], data_path
     """
     if args.n_dimensions:
         args.n_dimensions = int(args.n_dimensions)
+
+    pcoa_path = ''
     if args.pcoa:
-        stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions, plot=args.draw_plot,
-                   verbose=args.verbose)
+        pcoa_path = stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions, plot=args.draw_plot,
+                               verbose=args.verbose)
+
+    if pcoa_path:
+        pcoa_path = pathlib.Path(pcoa_path)
+    if args.anova:
+        stats.anova(data_path=pcoa_path or data_path, groups_file=args.groups_file,
+                    mode=args.mode, output_dir=args.output_dir, verbose=args.verbose)
 
 
 def perform_mash(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
@@ -77,7 +85,7 @@ def main():
                                             fromfile_prefix_chars='@')
 
     subparsers = global_parser.add_subparsers(
-        title='subcommands', help='available subcommands')
+        title='subcommands', help='available subcommands', dest='subparser_name')
 
     # STATS SUBCOMMAND
     stats_parser = subparsers.add_parser('stats', help='use the stats module')
@@ -86,7 +94,13 @@ def main():
                            files or 2) the file with names of selected files \
                                (names are relative to package location)')
     stats_parser.add_argument(
+        '-a', '--anova', action='store_true', help='perfom ANOVA on selected files')
+    stats_parser.add_argument(
         '-d', '--draw_plot', action='store_true', help='draw plots for performed analyses')
+    stats_parser.add_argument(
+        '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA. Required if -a was selected')
+    stats_parser.add_argument('-m', '--mode', choices=[
+                              'twoway', 'repeat'], default='twoway', help='select mode of ANOVA to perform')
     stats_parser.add_argument('-n', '--n_dimensions', default=None,
                               help='number of target dimensions for PCoA analysis')
     stats_parser.add_argument('-o', '--output_dir', default='./',
@@ -133,6 +147,10 @@ def main():
 
     # parse args
     args = global_parser.parse_args()
+    if args.subparser_name == 'stats':
+        if bool(args.anova) ^ bool(args.groups_file):
+            global_parser.error(
+                '--anova and --groups_file must be given together!')
 
     # VARIABLES
     data_path = pathlib.Path(args.in_d)
