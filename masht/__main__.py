@@ -107,6 +107,8 @@ def main():
                               help='location of the output directory (default: ".")')
     stats_parser.add_argument('-p', '--pcoa', action='store_true',
                               help='perform PCoA analysis and create results files')
+    stats_parser.add_argument('-t', '--triangle', action='store_true',
+                              help='signifies whether the input file is a triangle matrix')
     stats_parser.add_argument('-v', '--verbose', action='store_true',
                               help='add more descriptions of performed actions')
 

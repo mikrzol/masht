@@ -3,13 +3,20 @@ from mash import _get_files
 import pandas as pd
 
 
-def anova(data_path: pathlib.Path, groups_file: str, mode: str, output_dir: pathlib.Path, plot: bool = False, verbose: bool = False):
+def anova(data_path: pathlib.Path, groups_file: str, mode: str, output_dir: pathlib.Path, verbose: bool = False):
+    """perform ANOVA (either with repeats or two-way) on data in data_path file
 
-    # get df
+    Args:
+        data_path (pathlib.Path): location of file to perform ANOVA on
+        groups_file (str): location of .tsv file with information on groups for ANOVA 
+        mode (str): which type of ANOVA to perform
+        output_dir (pathlib.Path): location of folder to put the results files into
+        verbose (bool, optional): whether to report performed actions to console. Defaults to False.
+    """
     files = _get_files(data_path)
     for file in files:
         # load in triangle file and clean it
-        df = pd.read_csv(file, index_col=0)
+        df = pd.read_csv(file, sep='\t', index_col=0)
         '''
         df.index = [x.split('/')[-1] for x in df.index]
         df.columns = [x.split('/')[-1] for x in df.columns]
@@ -98,7 +105,7 @@ def plot_pcoa(res, names: list[str], output_dir: pathlib.Path) -> None:
     plt.savefig(f'{str(output_dir)}/pcoa_plot.png', bbox_inches='tight')
 
 
-def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, verbose: bool = False) -> str:
+def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, triangle: bool = False, verbose: bool = False) -> str:
     """perform PCoA of data obtained in the mash.triangle function
 
     Args:
@@ -113,19 +120,24 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
     last_result = ''  # location of file to perform ANOVA later if chosen
     files = _get_files(data_path)
     for file in files:
-        df = pd.read_csv(file, sep='\t')
-        df = _get_full_dist_matrix(df)
+        df = pd.read_csv(file, sep='\t', header=None)
+        if triangle:
+            df = pd.read_csv(file, sep='\t')
+            df = _get_full_dist_matrix(df)
 
         res = skb_pcoa(df, number_of_dimensions=n_dim or len(df))
-        # rename rows
-        res.samples.index = [x.split('/')[-1] for x in df.columns]
+
+        if triangle:
+            # rename rows
+            res.samples.index = [x.split('/')[-1] for x in df.columns]
+            # clean results
+            if not n_dim:
+                res.samples.drop(res.samples.columns[-1], axis=1, inplace=True)
+                res.eigvals = res.eigvals[:-1]
+                res.proportion_explained = res.proportion_explained[:-1]
         res.eigvals.rename('eigenval', inplace=True)
-        res.proportion_explained.rename('proportion_explained', inplace=True)
-        # clean results
-        if not n_dim:
-            res.samples.drop(res.samples.columns[-1], axis=1, inplace=True)
-            res.eigvals = res.eigvals[:-1]
-            res.proportion_explained = res.proportion_explained[:-1]
+        res.proportion_explained.rename(
+            'proportion_explained', inplace=True)
 
         if verbose:
             print(f'********** {file.name.split(".")[0]} **********')
@@ -138,16 +150,19 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
 
         # plot
         if plot:
-            names = [x.split('/')[-1] for x in df.columns]
-            plot_pcoa(res=res, names=names, output_dir=output_dir)
+            if triangle:
+                names = [x.split('/')[-1] for x in df.columns]
+                plot_pcoa(res=res, names=names, output_dir=output_dir)
+            else:
+                plot_pcoa(res=res, names=df.columns, output_dir=output_dir)
 
         # create results file
         res.samples.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.csv', sep='\t')
-        last_result = f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.csv'
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.tsv', sep='\t')
+        last_result = f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.tsv'
         res.eigvals.to_csv(
             f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.tsv', sep='\t')
         res.proportion_explained.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.csv', sep='\t')
+            f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.tsv', sep='\t')
 
     return last_result
