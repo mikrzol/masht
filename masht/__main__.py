@@ -25,12 +25,16 @@ def perform_stats(args: argparse.ArgumentParser, bin_paths: list[str], data_path
     if args.pcoa:
         pcoa_path = stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions,
                                plot=args.draw_plot, triangle=args.not_triangle, verbose=args.verbose)
-
     if pcoa_path:
         pcoa_path = pathlib.Path(pcoa_path)
+
     if args.anova:
         stats.anova(data_path=pcoa_path or data_path, groups_file=args.groups_file,
                     mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, ss_type=args.ss_type, triangle=args.not_triangle, verbose=args.verbose)
+
+    if args.manova:
+        stats.manova(data_path=pcoa_path or data_path,
+                     groups_file=args.groups_file, mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
 
 
 def perform_mash(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
@@ -103,8 +107,10 @@ def main():
         '-d', '--draw_plot', action='store_true', help='draw plots for performed analyses')
     stats_parser.add_argument(
         '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA. Required if -a was selected')
+    stats_parser.add_argument('-ma', '--manova', action='store_true',
+                              help='perfom MANOVA analysis on selected files')
     stats_parser.add_argument(
-        '-m', '--mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats.')
+        '-mo', '--mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats.')
     stats_parser.add_argument('-n', '--n_dimensions', default=None,
                               help='number of target dimensions for PCoA analysis')
     stats_parser.add_argument('-nt', '--not_triangle', action='store_false',
@@ -158,9 +164,9 @@ def main():
     # parse args
     args = global_parser.parse_args()
     if args.subparser_name == 'stats':
-        if bool(args.anova) ^ bool(args.groups_file):
+        if (bool(args.manova) or bool(args.anova)) ^ bool(args.groups_file):
             global_parser.error(
-                '--anova and --groups_file must be given together!')
+                '--anova or --manova and --groups_file must be given together!')
 
     # VARIABLES
     data_path = pathlib.Path(args.in_d)

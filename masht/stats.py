@@ -3,6 +3,48 @@ from mash import _get_files
 import pandas as pd
 
 
+def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
+    """perform MANOVA analyses of selected files
+
+    Args:
+        data_path (pathlib.Path): location of the input file (with PCoA coordinates). Automatically inferred if pcoa step was performed in the same command. 
+        groups_file (str): location of the file with group descriptions. The first column of this file should contain names 
+        output_dir (pathlib.Path): output directory location
+        mode (str, optional): How many parameters from the groups_file to consider. Defaults to 'n', which means to consider all of them.
+        pcs (int, optional): how many PCs to consider. Defaults to 4.
+        verbose (bool, optional): whether to increase verbosity. Defaults to False.
+    """
+    from statsmodels.multivariate.manova import MANOVA
+
+    files = _get_files(data_path)
+
+    for file in files:
+        df = pd.read_csv(file, sep='\t', index_col=0)
+        groups = pd.read_csv(groups_file, sep='\t', index_col=0)
+
+        # select columns with non-zero values only
+        df = df[df.columns[~(df == 0).all()]]
+
+        manova = pd.merge(groups, df, left_index=True, right_index=True)
+
+        # get number of params to consider
+        if mode.isnumeric():
+            mode = int(mode)
+        else:
+            mode = len(groups.columns)
+
+        # create formula and create model
+        formula = f'{" + ".join(df.columns[0:pcs])} ~ {" * ".join(groups.columns[:mode])}'
+        fit = MANOVA.from_formula(formula, data=manova)
+
+        # report results and save them to file
+        if verbose:
+            print(fit.mv_test().summary_frame)
+
+        fit.mv_test().summary_frame.to_csv(
+            f'{output_dir}/manova_{pcs}_PCs_{mode}_params.tsv', sep='\t')
+
+
 def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
     """perform ANOVA (either with repeats or n-way) on data in data_path file
 
@@ -13,7 +55,7 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, m
         mode (str, optional): which type of ANOVA to perform. Use 'repeat' for repeated ANOVA, int to perform n-way ANOVA or leave as default to perform ANOVA on all parameters in the groups_file. Defaults to 'n' (for all parameters).
         pcs (int, optional): number of PCs to perform ANOVA analyses on. Defaults to 4.
         ss_type (int, optional): the type of sum of squares to use (ANOVA-specific). Implemented in statsmodels.anova_lm. Defaults to 2.
-        triangle (bool, optional): whether input is in the form of a triangle (not used). Defaults to True.
+        triangle (bool, optional): (not used) whether input is in the form of a triangle. Defaults to True.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
     """
     files = _get_files(data_path)
