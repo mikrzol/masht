@@ -16,17 +16,21 @@ def perform_stats(args: argparse.ArgumentParser, bin_paths: list[str], data_path
     """
     if args.n_dimensions:
         args.n_dimensions = int(args.n_dimensions)
+    if args.pc_number:
+        args.pc_number = int(args.pc_number)
+
+    args.ss_type = int(args.ss_type)
 
     pcoa_path = ''
     if args.pcoa:
-        pcoa_path = stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions, plot=args.draw_plot,
-                               verbose=args.verbose)
+        pcoa_path = stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions,
+                               plot=args.draw_plot, triangle=args.not_triangle, verbose=args.verbose)
 
     if pcoa_path:
         pcoa_path = pathlib.Path(pcoa_path)
     if args.anova:
         stats.anova(data_path=pcoa_path or data_path, groups_file=args.groups_file,
-                    mode=args.mode, output_dir=args.output_dir, verbose=args.verbose)
+                    mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, ss_type=args.ss_type, triangle=args.not_triangle, verbose=args.verbose)
 
 
 def perform_mash(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
@@ -99,16 +103,20 @@ def main():
         '-d', '--draw_plot', action='store_true', help='draw plots for performed analyses')
     stats_parser.add_argument(
         '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA. Required if -a was selected')
-    stats_parser.add_argument('-m', '--mode', choices=[
-                              'twoway', 'repeat'], default='twoway', help='select mode of ANOVA to perform')
+    stats_parser.add_argument(
+        '-m', '--mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats.')
     stats_parser.add_argument('-n', '--n_dimensions', default=None,
                               help='number of target dimensions for PCoA analysis')
+    stats_parser.add_argument('-nt', '--not_triangle', action='store_false',
+                              help='signifies that the input file is a NOT a triangle matrix')
     stats_parser.add_argument('-o', '--output_dir', default='./',
                               help='location of the output directory (default: ".")')
     stats_parser.add_argument('-p', '--pcoa', action='store_true',
                               help='perform PCoA analysis and create results files')
-    stats_parser.add_argument('-t', '--triangle', action='store_true',
-                              help='signifies whether the input file is a triangle matrix')
+    stats_parser.add_argument('-pc', '--pc_number', default=4,
+                              help='Number of PCs to analyse with ANOVA.')
+    stats_parser.add_argument(
+        '-ss', '--ss_type', choices=['1', '2', '3'], default='2', help='Type of sum of squares for ANOVA.')
     stats_parser.add_argument('-v', '--verbose', action='store_true',
                               help='add more descriptions of performed actions')
 

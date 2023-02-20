@@ -3,53 +3,40 @@ from mash import _get_files
 import pandas as pd
 
 
-def anova(data_path: pathlib.Path, groups_file: str, mode: str, output_dir: pathlib.Path, verbose: bool = False):
-    """perform ANOVA (either with repeats or two-way) on data in data_path file
+def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
+    """perform ANOVA (either with repeats or n-way) on data in data_path file
 
     Args:
-        data_path (pathlib.Path): location of file to perform ANOVA on
-        groups_file (str): location of .tsv file with information on groups for ANOVA 
-        mode (str): which type of ANOVA to perform
-        output_dir (pathlib.Path): location of folder to put the results files into
-        verbose (bool, optional): whether to report performed actions to console. Defaults to False.
+        data_path (pathlib.Path): location of the input file (with PCoA coordinates). Automatically inferred if pcoa step was performed in the same command.
+        groups_file (str): location of the file with group descriptions. The first column of this file should contain names 
+        output_dir (pathlib.Path): output directory location
+        mode (str, optional): which type of ANOVA to perform. Use 'repeat' for repeated ANOVA, int to perform n-way ANOVA or leave as default to perform ANOVA on all parameters in the groups_file. Defaults to 'n' (for all parameters).
+        pcs (int, optional): number of PCs to perform ANOVA analyses on. Defaults to 4.
+        ss_type (int, optional): the type of sum of squares to use (ANOVA-specific). Implemented in statsmodels.anova_lm. Defaults to 2.
+        triangle (bool, optional): whether input is in the form of a triangle (not used). Defaults to True.
+        verbose (bool, optional): whether to increase verbosity. Defaults to False.
     """
     files = _get_files(data_path)
+
     for file in files:
-        # load in triangle file and clean it
         df = pd.read_csv(file, sep='\t', index_col=0)
-        '''
-        df.index = [x.split('/')[-1] for x in df.index]
-        df.columns = [x.split('/')[-1] for x in df.columns]
-        '''
+        groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
-        groups = pd.read_csv(groups_file, sep='\t')
-        groups = groups.set_index('file')
-        aov_df = pd.merge(groups, df, left_index=True, right_index=True)
-
-        if mode == 'twoway':
-            import statsmodels.api as sm
-            from statsmodels.formula.api import ols
-
-            # perform two-way ANOVAs
-            for col in aov_df.columns[2:]:
-                # TESTING - add '+ A:B' to anova formula below!!!
-                model = ols(f'{col} ~ A + B', data=aov_df).fit()
-
-                if verbose:
-                    print(f'ANOVA two-way ({col}):')
-                    print(sm.stats.anova_lm(model, typ=2))
-                    print()
-
-                sm.stats.anova_lm(model, typ=2).to_csv(
-                    f'{output_dir}/aov_two-way_{col}.tsv', sep='\t')
-
-        elif mode == 'repeat':
+        if mode == 'repeat':
             from statsmodels.stats.anova import AnovaRM
+
+            # get dataframe
+            aov_df = pd.merge(groups, df, left_index=True, right_index=True)
+
+            # prepare results container DF
             aovs = pd.DataFrame(
                 columns=['F Value', 'Num DF', 'Den DF', 'Pr > F'])
+
+            # perform repeated ANOVA
+            group_names = aov_df.columns[:2]
             for col in aov_df.columns[2:]:
                 temp = AnovaRM(data=aov_df, depvar=col,
-                               subject='A', within=['B']).fit()
+                               subject=group_names[0], within=group_names[1]).fit()
                 temp.anova_table.index = [col]
                 aovs = pd.concat([aovs, temp.anova_table])
 
@@ -58,6 +45,34 @@ def anova(data_path: pathlib.Path, groups_file: str, mode: str, output_dir: path
                 print(aovs)
 
             aovs.to_csv(f'{output_dir}/aov_repeated.tsv', sep='\t')
+
+        else:
+            import statsmodels.api as sm
+            from statsmodels.formula.api import ols
+
+            # get number of parameters to perform ANOVA on
+            n = int(mode) if mode.isnumeric() else len(groups.columns)
+
+            # select columns
+            groups_selected = groups.iloc[:, :n]
+
+            aov_df = pd.merge(groups_selected, df,
+                              left_index=True, right_index=True)
+
+            # perform n-way ANOVAs
+            # values in brackets get PC1-PCn (parameters are before PCs in aov_df)
+            for col in aov_df.columns[len(groups_selected.columns):len(groups_selected.columns)+pcs]:
+                # perform full ANOVA on selected factors (all interactions included)
+                model = ols(
+                    f'{col} ~ {" * ".join(groups_selected.columns)}', data=aov_df).fit()
+
+                if verbose:
+                    print(f'ANOVA {len(groups_selected.columns)}-way ({col}):')
+                    print(sm.stats.anova_lm(model, typ=ss_type))
+                    print()
+
+                sm.stats.anova_lm(model, typ=ss_type).to_csv(
+                    f'{output_dir}/aov_{n}-way_{col}.tsv', sep='\t')
 
 
 def _get_full_dist_matrix(df: pd.DataFrame) -> pd.DataFrame:
@@ -70,14 +85,15 @@ def _get_full_dist_matrix(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: converted DataFrame
     """
     from numpy import unique
-    seqs = unique([df['seq_A']] + [df['seq_B']])
+    col_1, col_2, col_3 = df.columns
+    seqs = unique([df[col_1]] + [df[col_2]])
     actual_df = pd.DataFrame(index=seqs, columns=seqs)
 
     for _, row in df.iterrows():
-        actual_df.loc[row['seq_A'], row['seq_B']] = row['distance']
-        actual_df.loc[row['seq_B'], row['seq_A']] = row['distance']
-        actual_df.loc[row['seq_A'], row['seq_A']] = 0
-        actual_df.loc[row['seq_B'], row['seq_B']] = 0
+        actual_df.loc[row[col_1], row[col_2]] = row[col_3]
+        actual_df.loc[row[col_2], row[col_1]] = row[col_3]
+        actual_df.loc[row[col_1], row[col_1]] = 0
+        actual_df.loc[row[col_2], row[col_2]] = 0
 
     return actual_df
 
@@ -105,14 +121,19 @@ def plot_pcoa(res, names: list[str], output_dir: pathlib.Path) -> None:
     plt.savefig(f'{str(output_dir)}/pcoa_plot.png', bbox_inches='tight')
 
 
-def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, triangle: bool = False, verbose: bool = False) -> str:
+def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, triangle: bool = True, verbose: bool = False) -> str:
     """perform PCoA of data obtained in the mash.triangle function
 
     Args:
-        data_path (pathlib.Path): location of input triangle file
+        data_path (pathlib.Path): location of input file
         output_dir (pathlib.Path): output location
         n_dim (intorNone, optional): number of dimensions to use in PCoA. Defaults to None (meaning equal to number of observations).
+        plot (bool, optional): whether to create a plot of results. Defaults to False.
+        triangle (bool, optional): whether the input file has the triangle form. Defaults to True.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
+
+    Returns:
+        str: location of the last generated pcoa_coords.tsv file. Used to automatically perform the anova step on such file if performing ANOVA was specified in the command. 
     """
     import pandas as pd
     from skbio.stats.ordination import pcoa as skb_pcoa
@@ -120,16 +141,18 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
     last_result = ''  # location of file to perform ANOVA later if chosen
     files = _get_files(data_path)
     for file in files:
-        df = pd.read_csv(file, sep='\t', header=None)
         if triangle:
             df = pd.read_csv(file, sep='\t')
             df = _get_full_dist_matrix(df)
+        else:
+            df = pd.read_csv(file, sep='\t', header=None)
 
         res = skb_pcoa(df, number_of_dimensions=n_dim or len(df))
 
+        names = [x.split('/')[-1].split('.')[0] for x in df.columns]
         if triangle:
             # rename rows
-            res.samples.index = [x.split('/')[-1] for x in df.columns]
+            res.samples.index = names
             # clean results
             if not n_dim:
                 res.samples.drop(res.samples.columns[-1], axis=1, inplace=True)
@@ -151,7 +174,6 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
         # plot
         if plot:
             if triangle:
-                names = [x.split('/')[-1] for x in df.columns]
                 plot_pcoa(res=res, names=names, output_dir=output_dir)
             else:
                 plot_pcoa(res=res, names=df.columns, output_dir=output_dir)
