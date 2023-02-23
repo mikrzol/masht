@@ -6,12 +6,12 @@ import mash
 import stats
 
 
-def perform_stats(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
+def perform_stats(args: argparse.ArgumentParser, bin_path: list[str], data_path: pathlib.Path) -> None:
     """perform the stats subcommand
 
     Args:
         args (argparse.ArgumentParser): args created in the main function
-        bin_paths (list[str]): directory with the mash binary (obsolete)
+        bin_path (str): directory with the mash binary (obsolete)
         data_path (pathlib.Path): location of the dir/ path with files to work on
     """
     if args.n_dimensions:
@@ -37,49 +37,49 @@ def perform_stats(args: argparse.ArgumentParser, bin_paths: list[str], data_path
                      groups_file=args.groups_file, mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
 
 
-def perform_mash(args: argparse.ArgumentParser, bin_paths: list[str], data_path: pathlib.Path) -> None:
+def perform_mash(args: argparse.ArgumentParser, bin_path: str, data_path: pathlib.Path) -> None:
     """perform mash command
 
     Args:
         args (argparse.ArgumentParser): args created in the main function
-        bin_paths (list[str]): directory with the mash binary
+        bin_path (str): directory with the mash binary
         data_path (pathlib.Path): location of the dir/ path with files to work on
     """
     # ORDER MATTERS
     # sketch
     sketch_path = ''
     if args.sketch:
-        sketch_path = mash.sketch(bin_paths=bin_paths,
+        sketch_path = mash.sketch(bin_path=bin_path,
                                   data_path=data_path, output_path=args.output_dir,
                                   verbose=args.verbose)
     if sketch_path:
         sketch_path = pathlib.Path(sketch_path)
     # info
     if args.info:
-        mash.info(bin_paths=bin_paths, data_path=sketch_path or data_path)
+        mash.info(bin_path=bin_path, data_path=sketch_path or data_path)
 
     # bounds
     if args.bounds:
-        mash.bounds(bin_paths=bin_paths, data_path=sketch_path or data_path,
+        mash.bounds(bin_path=bin_path, data_path=sketch_path or data_path,
                     output_path=args.output_dir, verbose=args.verbose)
     # dist
     if args.distance:
-        mash.dist(bin_paths=bin_paths, data_path=data_path,
+        mash.dist(bin_path=bin_path, data_path=data_path,
                   output_path=args.output_dir, verbose=args.verbose)
 
     # triangle
     if args.triangle:
-        mash.triangle(bin_paths=bin_paths, data_path=sketch_path or data_path,
+        mash.triangle(bin_path=bin_path, data_path=sketch_path or data_path,
                       output_path=args.output_dir, verbose=args.verbose)
 
     # paste
     if args.paste:
-        mash.paste(bin_paths=bin_paths, data_path=data_path,
+        mash.paste(bin_path=bin_path, data_path=data_path,
                    output_path=args.output_dir, file_name=args.paste)
 
     # screen
     if args.screen:
-        mash.screen(bin_paths=bin_paths,
+        mash.screen(bin_path=bin_path,
                     data_path=data_path, query=pathlib.Path(args.screen))
 
     # mash (fully custom)
@@ -120,7 +120,7 @@ def main():
     stats_parser.add_argument('-p', '--pcoa', action='store_true',
                               help='perform PCoA analysis and create results files')
     stats_parser.add_argument('-pc', '--pc_number', default=4,
-                              help='Number of PCs to analyse with ANOVA.')
+                              help='Number of PCs to analyse with ANOVA. Defaults to 4.')
     stats_parser.add_argument(
         '-ss', '--ss_type', choices=['1', '2', '3'], default='2', help='Type of sum of squares for ANOVA.')
     stats_parser.add_argument('-v', '--verbose', action='store_true',
@@ -172,8 +172,7 @@ def main():
     data_path = pathlib.Path(args.in_d)
 
     # TESTING - remove paths later
-    # testing_paths = ['../server_data/', '../mash-Linux64-v2.3/']
-    bin_paths = ['bin/']
+    bin_path = 'bin/'
 
     # check if output dir exists and create one if necessary
     args.output_dir = args.output_dir.strip()
@@ -181,13 +180,13 @@ def main():
         parents=True, exist_ok=True)
 
     # MASH
-    # perform_mash(args=args, bin_paths=bin_paths, data_path=data_path)
+    # perform_mash(args=args, bin_path=bin_path, data_path=data_path)
 
     # STATS
-    # perform_stats(args=args, bin_paths=bin_paths, data_path=data_path)
+    # perform_stats(args=args, bin_path=bin_path, data_path=data_path)
 
     # perform appropriate function
-    args.func(args, bin_paths, data_path)
+    args.func(args, bin_path, data_path)
 
 
 if __name__ == '__main__':

@@ -47,12 +47,12 @@ def _format_triangle_output(text: str) -> str:
     return final
 
 
-def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib.Path], mash_cmd: str, query: pathlib.Path = '', verbose: bool = False, output_path: str = '.') -> None:
+def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_path: pathlib.Path, mash_cmd: str, query: pathlib.Path = '', verbose: bool = False, output_path: str = '.') -> None:
     """helper funcion for looping over sketch files and applying chosen mash command
 
     Args:
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
-        bin_paths (list[pathlib.Path]): location of the mash binary files (TESTING - remove this later)
+        bin_path (pathlib.Path): location of the mash binary files
         mash_cmd (str): mash command to perform on each file
         query (pathlib.Path): location of the query file (for screen command only)
         verbose (bool, optional): whether to print more info into terminal. Defaults to False.
@@ -68,134 +68,131 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_paths: list[pathlib
     files = _get_files(data_path)
 
     # TESTING - remove paths loop later
-    for path in bin_paths:
-        for file in files:
-            if file.suffix == '.msh':
-                print(f'============= {file}: =============')
-                if query:
-                    query_files = _get_files(query)
-                    proc = subprocess.run([f'{path}mash', mash_cmd,
-                                           file, *query_files],
-                                          capture_output=True)
-                    if proc.returncode != 0:
-                        print(
-                            f'MASH {mash_cmd} encountered an error, see below:\n')
-                        print(proc.stderr.decode())
-                        return
+    for file in files:
+        if file.suffix == '.msh':
+            print(f'============= {file}: =============')
+            if query:
+                query_files = _get_files(query)
+                proc = subprocess.run([f'{bin_path}mash', mash_cmd,
+                                       file, *query_files],
+                                      capture_output=True)
+                if proc.returncode != 0:
+                    print(
+                        f'MASH {mash_cmd} encountered an error, see below:\n')
+                    print(proc.stderr.decode())
+                    return
 
+            else:
+                proc = subprocess.run([f'{bin_path}mash', mash_cmd,
+                                       file],
+                                      capture_output=True)
+                if proc.returncode != 0:
+                    print(
+                        f'MASH {mash_cmd} encountered an error, see below:\n')
+                    print(proc.stderr.decode())
+                    return
+
+            if console_only.get(mash_cmd) or verbose:
+                print(f"{proc.stdout.decode('utf-8')}", end='')
+
+            if not console_only.get(mash_cmd):
+                if mash_cmd == 'triangle':
+                    with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.tsv', 'w') as out_f:
+                        out_f.write('\n'.join(_format_triangle_output(
+                            proc.stdout.decode('utf-8'))))
                 else:
-                    proc = subprocess.run([f'{path}mash', mash_cmd,
-                                           file],
-                                          capture_output=True)
-                    if proc.returncode != 0:
-                        print(
-                            f'MASH {mash_cmd} encountered an error, see below:\n')
-                        print(proc.stderr.decode())
-                        return
-
-                if console_only.get(mash_cmd) or verbose:
-                    print(f"{proc.stdout.decode('utf-8')}", end='')
-
-                if not console_only.get(mash_cmd):
-                    if mash_cmd == 'triangle':
-                        with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.tsv', 'w') as out_f:
-                            out_f.write('\n'.join(_format_triangle_output(
-                                proc.stdout.decode('utf-8'))))
-                    else:
-                        with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.txt', 'w') as out_f:
-                            out_f.write(proc.stdout.decode('utf-8'))
+                    with open(f'{output_path}/{file.name.split(".")[0]}_{mash_cmd}.txt', 'w') as out_f:
+                        out_f.write(proc.stdout.decode('utf-8'))
 
 
-def bounds(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
+def bounds(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
     """calculate error bounds of selected sketch file[s]
 
     Args:
-        bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
+        bin_path (str): path that lead to a mash binary
         data_path (pathlib.Path): location of the sketch files
         output_path (str, optional): location of the report file. Defaults to '.'.
         verbose (bool, optional): whether to give more info in the console. Defaults to False.
     """
-    print('Error bounds of selected file[s]:')
-    _loop_over_all_sketch_files(data_path=data_path, bin_paths=bin_paths,
+    print('\nError bounds of selected file[s]:')
+    _loop_over_all_sketch_files(data_path=data_path, bin_path=bin_path,
                                 mash_cmd='bounds', verbose=verbose, output_path=output_path)
 
 
-def dist(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
+def dist(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
     """calculate mash distance on between wanted files and save result to {output_path}/distances.tsv
 
     Args:
-        bin_paths (list[str]) [testing var]: list of paths with mash binary
+        bin_path (str): list of paths with mash binary
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
         output_path (str, optional):  location of the directory to put the results.tsv file into. Defaults to '.'
         verbose (bool, optional): increase verbosity. Defaults to False.
     """
     print('\nCalculating mash distances...')
     files = _get_files(data_path)
-    for path in bin_paths:
-        proc = subprocess.run([f'{path}mash', 'dist',
-                               *files],
-                              capture_output=True
-                              )
-        if proc.returncode != 0:
-            print('MASH dist encountered an error, see below:\n')
-            print(proc.stderr.decode())
-            return
+    proc = subprocess.run([f'{bin_path}mash', 'dist',
+                           *files],
+                          capture_output=True
+                          )
+    if proc.returncode != 0:
+        print('\nMASH dist encountered an error, see below:\n')
+        print(proc.stderr.decode())
+        return
 
-        if verbose:
-            print(f"{proc.stdout.decode('utf-8')}", end='')
+    if verbose:
+        print(f"{proc.stdout.decode('utf-8')}", end='')
 
-        with open(f'{output_path}/distances.tsv', 'w') as out_f:
-            out_f.write('seq_A,seq_B,mash_dist,p_val,matching_hashes\n')
-            out_f.write(proc.stdout.decode('utf-8'))
-    print('Mash distances calculated!')
+    with open(f'{output_path}/distances.tsv', 'w') as out_f:
+        out_f.write('seq_A,seq_B,mash_dist,p_val,matching_hashes\n')
+        out_f.write(proc.stdout.decode('utf-8'))
+    print('\nMash distances calculated!')
 
 
-def info(bin_paths: list[str], data_path: str or pathlib.Path):
+def info(bin_path: str, data_path: str or pathlib.Path):
     """show info on selected sketch (.msh) files
 
     Args:
-        bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
+        bin_path (str): path that lead to a mash binary
         data_path (str or pathlib.Path): location of the sketch files
     """
 
     # TESTING can remove this types of messages later
-    print('Information on selected files:')
+    print('\nInformation on selected files:')
 
     _loop_over_all_sketch_files(
-        data_path, bin_paths, 'info')
+        data_path, bin_path, 'info')
 
 
-def sketch(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> str:
+def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> str:
     """
     apply mash sketch on given files if data_path leads to a single file or all files in a dir if it leads to a dir \
             and save result to {output_path}/sketches.msh
 
     Args:
-        bin_paths (list[str]) [testing var]: list of paths with mash binary
+        bin_path (str) : list of paths with mash binary
         data_path (pathlib.Path): location of the file with selected files listed or the dir with wanted files
         output_path (str, optional): location of the directory to put the sketches.msh file into. Defaults to '.'
         verbose: increase verbosity
     """
     print('\nCreating mash sketches...')
-    # TESTING - remove types later
-    types = ['old', 'new']
+
     files = _get_files(data_path)
 
     # TESTING - remove path loop later
-    for path, type in zip(bin_paths, types):
-        proc = subprocess.run([f'{path}mash', 'sketch',
-                               *files,
-                               '-o', f'{type}_sketches'
-                               ],
-                              capture_output=True)
-        if proc.returncode != 0:
-            print(f'Encountered {proc.returncode} error, see below:\n')
-            print(proc.stderr.decode())
-            print('Terminating sketching...')
-            return
+    proc = subprocess.run([f'{bin_path}mash', 'sketch',
+                           *files,
+                           '-o', f'sketches'
+                           ],
+                          capture_output=True)
 
-        if verbose:
-            print(proc.stdout.decode())
+    if proc.returncode != 0:
+        print(f'Encountered {proc.returncode} error, see below:\n')
+        print(proc.stderr.decode())
+        print('\nTerminating sketching...')
+        return
+
+    if verbose:
+        print(proc.stdout.decode())
 
     pathlib.Path(output_path).mkdir(
         parents=True, exist_ok=True)
@@ -203,24 +200,22 @@ def sketch(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.'
     # move the *_sketches.msh files to a desired location (mash can only generate the sketch file to ./ ) --> TESTING (acually, it does do that)
     sketch_path = ''
 
-    # TESTING - bin loop will be removed later
-    for type, bin in zip(types, bin_paths):
-        subprocess.run(
-            ['mv', f'{type}_sketches.msh',
-                f'{output_path}/{type}_sketches.msh'],
-            capture_output=not verbose)
-        sketch_path = f'{output_path}/{type}_sketches.msh'
+    subprocess.run(
+        ['mv', f'sketches.msh',
+            f'{output_path}/sketches.msh'],
+        capture_output=not verbose)
+    sketch_path = f'{output_path}/sketches.msh'
 
-    print('Mash sketches created!')
+    print('\nMash sketches created!')
 
     return sketch_path
 
 
-def paste(bin_paths: list[str], data_path: pathlib.Path, file_name: str, output_path: str = '.') -> None:
+def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: str = '.') -> None:
     """paste one multiple sketch files into a new one
 
     Args:
-        bin_paths (list[str]): list of paths that lead to a mash binary (TESTING)
+        bin_path (str): path that lead to a mash binary
         data_path (pathlib.Path): location of the sketch files
         file_name (str): name of the new file
         output_path (str, optional): name of the new sketch file. Defaults to '.'.
@@ -229,37 +224,9 @@ def paste(bin_paths: list[str], data_path: pathlib.Path, file_name: str, output_
         # txt file
         if data_path.suffix != '.msh':
             files = _get_files(data_path)
+
             # TESTING - remove paths loop later
-            types = ['old', 'new']
-            for path, type in zip(bin_paths, types):
-                proc = subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
-                                       *files,
-                                       ],
-                                      capture_output=True)
-                if proc.returncode != 0:
-                    print(f'MASH paste encountered an error, see below:\n')
-                    print(proc.stderr.decode())
-                    return
-        # .msh file
-        else:
-            # TESTING - remove paths loop later
-            types = ['old', 'new']
-            for path, type in zip(bin_paths, types):
-                proc = subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
-                                       data_path,
-                                       ],
-                                      capture_output=True)
-                if proc.returncode != 0:
-                    print(f'MASH paste encountered an error, see below:\n')
-                    print(proc.stderr.decode())
-                    return
-    # dir
-    else:
-        files = [file for file in data_path.iterdir() if file.suffix == '.msh']
-        # TESTING - remove paths loop later
-        types = ['old', 'new']
-        for path, type in zip(bin_paths, types):
-            proc = subprocess.run([f'{path}mash', 'paste', f'{output_path}/{file_name}',
+            proc = subprocess.run([f'{bin_path}mash', 'paste', f'{output_path}/{file_name}',
                                    *files,
                                    ],
                                   capture_output=True)
@@ -267,32 +234,57 @@ def paste(bin_paths: list[str], data_path: pathlib.Path, file_name: str, output_
                 print(f'MASH paste encountered an error, see below:\n')
                 print(proc.stderr.decode())
                 return
+        # .msh file
+        else:
+            # TESTING - remove paths loop later
+
+            proc = subprocess.run([f'{bin_path}mash', 'paste', f'{output_path}/{file_name}',
+                                   data_path,
+                                   ],
+                                  capture_output=True)
+            if proc.returncode != 0:
+                print(f'MASH paste encountered an error, see below:\n')
+                print(proc.stderr.decode())
+                return
+    # dir
+    else:
+        files = [file for file in data_path.iterdir() if file.suffix == '.msh']
+        # TESTING - remove paths loop later
+
+        proc = subprocess.run([f'{bin_path}mash', 'paste', f'{output_path}/{file_name}',
+                               *files,
+                               ],
+                              capture_output=True)
+        if proc.returncode != 0:
+            print(f'MASH paste encountered an error, see below:\n')
+            print(proc.stderr.decode())
+            return
 
 
-def screen(bin_paths: list[str], data_path: pathlib.Path, query: pathlib.Path):
+def screen(bin_path: str, data_path: pathlib.Path, query: pathlib.Path):
     """determine whether query files are within selected .msh files
 
     Args:
-        bin_paths (list[str]): paths to binaries of mash TESTING - remove later
+        bin_path (str): path to binary of mash
         data_path (pathlib.Path): input location
         query (pathlib.Path): location of query file[s]. Can be a single file, directory or file with relative paths to selected files.
     """
     # TESTING can remove this types of messages later
-    print('Screening selected files:')
+    print('\nScreening selected files:')
 
     _loop_over_all_sketch_files(
-        data_path, bin_paths, 'screen', query=query)
+        data_path, bin_path, 'screen', query=query)
 
 
-def triangle(bin_paths: list[str], data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
+def triangle(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
     """create matrix of distances between all of the sequences in a sketch to all others in this file
 
     Args:
-        bin_paths (list[str]): paths to binaries of mash TESTING - remove this later
+        bin_path (str): path to binary of mash
         data_path (pathlib.Path): input location
         output_path (str, optional): location of the output directory. Defaults to '.'.
         verbose (bool, optional): whether to give more info on performed operations to the console. Defaults to False.
     """
-    print('Matrix of distances between sequences in selected files:')
-    _loop_over_all_sketch_files(data_path=data_path, bin_paths=bin_paths,
+    print('\nMatrix of distances between sequences in selected files:')
+    _loop_over_all_sketch_files(data_path=data_path, bin_path=bin_path,
                                 mash_cmd='triangle', verbose=verbose, output_path=output_path)
