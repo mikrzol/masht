@@ -92,6 +92,9 @@ def main():
                                             description='MASH distance toolkit',
                                             fromfile_prefix_chars='@')
 
+    # remove spaces from global_parser
+    global_parser
+
     subparsers = global_parser.add_subparsers(
         title='subcommands', help='available subcommands', dest='subparser_name')
 

@@ -5,3 +5,9 @@ mash            # can use a standalone binary file instead
 scikit-bio      # required for stats::pcoa
 pandas
 numpy
+rpy2
+
+##### R requirements
+base
+stats
+broom

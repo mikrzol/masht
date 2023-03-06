@@ -14,7 +14,18 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         pcs (int, optional): how many PCs to consider. Defaults to 4.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
     """
-    from statsmodels.multivariate.manova import MANOVA
+
+    # using rpy2 to perform MANOVA because Python's statsmodels gives incorrect results
+
+    from rpy2.robjects.packages import importr
+    from rpy2.robjects import pandas2ri
+    import rpy2.robjects as ro
+    stats = importr('stats')
+    broom = importr('broom')
+
+    # supress meaningless errors
+    import rpy2.rinterface_lib.callbacks
+    rpy2.rinterface_lib.callbacks.consolewrite_warnerror = lambda *args: None
 
     files = _get_files(data_path)
 
@@ -33,16 +44,51 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         else:
             mode = len(groups.columns)
 
+        # convert Pandas df to R df
+        with (ro.default_converter + pandas2ri.converter).context():
+            m_df = ro.conversion.get_conversion().py2rpy(manova)
+
+        # create formula and create model
+        from rpy2.robjects import Formula
+        formula = Formula(
+            f'cbind({",".join(df.columns[0:pcs])}) ~ {" * ".join(groups.columns[:mode])}')
+        man = stats.manova(formula=formula, data=m_df)
+
+        # convert results to Pandas df
+        df_list = []
+        with (ro.default_converter + pandas2ri.converter).context():
+            for test in ['Wilks', 'Pillai', 'Hotelling-Lawley', 'Roy']:
+                temp = ro.conversion.get_conversion().rpy2py(broom.tidy_manova(man, test=test))
+                temp.rename({temp.columns[2]: 'value'}, axis=1, inplace=True)
+                temp['test'] = test
+                temp.set_index(['test', 'term'], inplace=True)
+                df_list.append(temp)
+        big_df = pd.concat(df_list)
+
+        # save results to file
+        big_df.to_csv(
+            f'{output_dir}/manova_{pcs}_PCs_{mode}_params.tsv', sep='\t')
+
+        # report results if verbose
+        if verbose:
+            print('========= MANOVA results: =========')
+            print(big_df)
+
+    ''' implementation with Python's statsmodels
+        from statsmodels.multivariate.manova import MANOVA
+
         # create formula and create model
         formula = f'{" + ".join(df.columns[0:pcs])} ~ {" * ".join(groups.columns[:mode])}'
         fit = MANOVA.from_formula(formula, data=manova)
 
         # report results and save them to file
         if verbose:
+            print()
             print(fit.mv_test().summary_frame)
 
         fit.mv_test().summary_frame.to_csv(
             f'{output_dir}/manova_{pcs}_PCs_{mode}_params.tsv', sep='\t')
+    '''
 
 
 def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
@@ -83,6 +129,7 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, m
                 aovs = pd.concat([aovs, temp.anova_table])
 
             if verbose:
+                print()
                 print('ANOVA repeated:')
                 print(aovs)
 
@@ -109,6 +156,7 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, m
                     f'{col} ~ {" * ".join(groups_selected.columns)}', data=aov_df).fit()
 
                 if verbose:
+                    print()
                     print(f'ANOVA {len(groups_selected.columns)}-way ({col}):')
                     print(sm.stats.anova_lm(model, typ=ss_type))
                     print()
@@ -205,6 +253,7 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
             'proportion_explained', inplace=True)
 
         if verbose:
+            print()
             print(f'********** {file.name.split(".")[0]} **********')
             print('========== Coordinates of samples in the ordination space: ==========')
             print(res.samples)

@@ -1,0 +1,7 @@
+tests/anova_tests/res/aov_triangle_pcoa_coords.tsv
+-ma
+-g
+tests/anova_tests/opis_prob_2.tsv
+-v
+-o
+test_outputs/

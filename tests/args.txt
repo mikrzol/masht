@@ -1,5 +1,6 @@
-tests/data/seqs
+tests/files.txt
 -s
--o test_outputs
+-o maria
 -v
 -i
+-t
