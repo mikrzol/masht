@@ -107,7 +107,7 @@ def main():
     stats_parser.add_argument(
         '-a', '--anova', action='store_true', help='perfom ANOVA on selected files')
     stats_parser.add_argument(
-        '-d', '--draw_plot', action='store_true', help='draw plots for performed analyses')
+        '-d', '--draw_plot', nargs=2, help='draw PCoA plot for chosen PCs. Two intigers required.')
     stats_parser.add_argument(
         '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA. Required if -a was selected')
     stats_parser.add_argument('-ma', '--manova', action='store_true',

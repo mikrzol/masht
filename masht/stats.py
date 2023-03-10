@@ -15,6 +15,12 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
     """
 
+    # TODO add checking for assumptions correctness with
+    # 1. generalized shapiro-wilk's for normality
+    # 2. box's m test for homogeneity of covariances
+    # 3. checking for multicollinearity
+    # 4. checking for linear relationships of the dependent variables
+
     # using rpy2 to perform MANOVA because Python's statsmodels gives incorrect results
 
     from rpy2.robjects.packages import importr
@@ -188,41 +194,66 @@ def _get_full_dist_matrix(df: pd.DataFrame) -> pd.DataFrame:
     return actual_df
 
 
-def plot_pcoa(res, names: list[str], output_dir: pathlib.Path) -> None:
+def plot_pcoa(res, names: list[str], output_dir: pathlib.Path, chosen_pcs: list[str] = ['1', '2']) -> None:
     """plot skbio.(...).pcoa results and save it to file
 
     Args:
         res (_type_): OrdinationResults object created by skb_pcoa function
         names (list[str]): list of names of observations
         output_dir (pathlib.Path): output location
+        chosen_pcs (list[str], optional): which PCs to plot. Defaults to ['1', '2'].
     """
+
+    # matplotlib implementation
     import matplotlib.pyplot as plt
+    chosen_pcs = ['PC' + pc for pc in chosen_pcs]
 
-    # TODO implement option to specify which PCs to plot
-
-    plt.plot(res.samples['PC1'], res.samples['PC2'], 'o')
+    plt.plot(res.samples[chosen_pcs[0]], res.samples[chosen_pcs[1]], 'o')
     plt.grid(color='lightgrey')
-    for name, (i, pc) in zip(names, res.samples[['PC1', 'PC2']].iterrows()):
+    for name, (i, pc) in zip(names, res.samples[chosen_pcs].iterrows()):
         plt.annotate(name, pc, xytext=(10, -5),
                      textcoords='offset points', color='darkslategrey', annotation_clip=True)
     plt.title('PCoA ordination')
     plt.xlabel(
-        f'PC1 ({round(res.proportion_explained["PC1"]*100,2)}% variance explained)')
+        f'{chosen_pcs[0]} ({round(res.proportion_explained[chosen_pcs[0]]*100,2)}% variance explained)')
     plt.ylabel(
-        f'PC2 ({round(res.proportion_explained["PC2"]*100,2)}% variance explained)')
+        f'{chosen_pcs[1]} ({round(res.proportion_explained[chosen_pcs[1]]*100,2)}% variance explained)')
     plt.savefig(f'{str(output_dir)}/pcoa_plot.png', bbox_inches='tight')
 
+    ''' # plot using plotnine
+    from plotnine import ggplot, aes, geom_point, geom_text, labs, scale_x_continuous
 
-def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: bool = False, triangle: bool = True, verbose: bool = False) -> str:
+    names = res.samples.index
+    chosen_pcs = ['PC' + pc for pc in chosen_pcs]
+    nudge_val = res.samples['PC1'].max() * 0.03
+
+    plot = (
+        ggplot(res.samples) +
+        aes(x=chosen_pcs[0], y=chosen_pcs[1]) +
+        geom_text(aes(label=names), nudge_x=nudge_val, nudge_y=nudge_val) +
+        geom_point() +
+        labs(title=f'PCoA ordination of {" and ".join(chosen_pcs)}',
+             x=f'{chosen_pcs[0]} ({round(res.proportion_explained[chosen_pcs[0]]*100,2)}% variance explained)',
+             y=f'{chosen_pcs[1]} ({round(res.proportion_explained[chosen_pcs[1]]*100,2)}% variance explained)')
+        + scale_x_continuous(expand=(0.1, 0))
+    )
+
+    plot.save(f'{str(output_dir)}/pcoa_plot.png',
+              width=10, height=10, dpi=400, verbose=False)
+    '''
+
+
+def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: list[str] = [], triangle: bool = True, verbose: bool = False) -> str:
     """perform PCoA of data obtained in the mash.triangle function
 
     Args:
         data_path (pathlib.Path): location of input file
         output_dir (pathlib.Path): output location
         n_dim (intorNone, optional): number of dimensions to use in PCoA. Defaults to None (meaning equal to number of observations).
-        plot (bool, optional): whether to create a plot of results. Defaults to False.
+        plot (list[str], optional): which PCs to plot if any. Defaults to [] (meaning: don't plot).
         triangle (bool, optional): whether the input file has the triangle form. Defaults to True.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
+
 
     Returns:
         str: location of the last generated pcoa_coords.tsv file. Used to automatically perform the anova step on such file if performing ANOVA was specified in the command. 
@@ -267,9 +298,11 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
         # plot
         if plot:
             if triangle:
-                plot_pcoa(res=res, names=names, output_dir=output_dir)
+                plot_pcoa(res=res, names=names,
+                          output_dir=output_dir, chosen_pcs=plot)
             else:
-                plot_pcoa(res=res, names=df.columns, output_dir=output_dir)
+                plot_pcoa(res=res, names=df.columns,
+                          output_dir=output_dir, chosen_pcs=plot)
 
         # create results file
         res.samples.to_csv(

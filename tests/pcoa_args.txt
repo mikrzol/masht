@@ -1,0 +1,8 @@
+tests/anova_tests/aov_triangle.tsv
+-p
+-v
+-o
+test_outputs/
+-d
+1
+9
