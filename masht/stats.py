@@ -198,6 +198,8 @@ def plot_pcoa(res, names: list[str], output_dir: pathlib.Path) -> None:
     """
     import matplotlib.pyplot as plt
 
+    # TODO implement option to specify which PCs to plot
+
     plt.plot(res.samples['PC1'], res.samples['PC2'], 'o')
     plt.grid(color='lightgrey')
     for name, (i, pc) in zip(names, res.samples[['PC1', 'PC2']].iterrows()):
