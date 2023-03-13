@@ -109,11 +109,11 @@ def main():
     stats_parser.add_argument(
         '-d', '--draw_plot', nargs=2, help='draw PCoA plot for chosen PCs. Two intigers required.')
     stats_parser.add_argument(
-        '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA. Required if -a was selected')
+        '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA or MANOVA. Required if -a or -ma was selected')
     stats_parser.add_argument('-ma', '--manova', action='store_true',
                               help='perfom MANOVA analysis on selected files')
     stats_parser.add_argument(
-        '-mo', '--mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats.')
+        '-mo', '--mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats. Defaults to \'n\'')
     stats_parser.add_argument('-n', '--n_dimensions', default=None,
                               help='number of target dimensions for PCoA analysis')
     stats_parser.add_argument('-nt', '--not_triangle', action='store_false',

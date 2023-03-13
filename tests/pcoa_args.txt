@@ -6,3 +6,5 @@ test_outputs/
 -d
 1
 9
+-ma
+tests/anova_tests/test_groups_file.tsv
