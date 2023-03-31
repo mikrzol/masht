@@ -1,5 +1,6 @@
 ##### Basic requirements
 mash            # can use a standalone binary file instead
+blast           # required for masht::blaster
 
 #### Python requirements
 scikit-bio      # required for stats::pcoa

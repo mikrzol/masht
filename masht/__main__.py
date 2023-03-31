@@ -5,6 +5,8 @@ import pathlib
 import mash
 import stats
 
+# TODO implement perform_blaster function
+
 
 def perform_stats(args: argparse.ArgumentParser, bin_path: list[str], data_path: pathlib.Path) -> None:
     """perform the stats subcommand
