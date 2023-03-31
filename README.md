@@ -1,6 +1,6 @@
 # MASHt - MASH toolkit
 
-Python toolkit for the MASH tool for Linux.
+Python toolkit for the MASH tool and streamlined statistical analysis for Linux.
 
 ## Description
 
@@ -19,7 +19,7 @@ This toolkit serves to automate work that includes MASH.
   - stats
   - broom
 - mash (either in binary or installed in the environment)
-- Linux OS
+- Linux OS (commands from the `stats` subcommand can also be run on Windows)
 
 ### Installation
 
@@ -148,7 +148,7 @@ No installation is necessary - the package should work right away.
     tests/data/triangle_three.tsv
     ```
 
-    NB - the `<path_to_file>` file has to have a .txt extension!
+    NB: the `<path_to_file>` file has to have a .txt extension!
 
   - number of dimensions is controlled with the `-n` option. Give an intiger to specify the number of dimensions or leave it empty to perform PCoA analysis on all dimensions:
 
@@ -187,7 +187,7 @@ No installation is necessary - the package should work right away.
 
     after the PCoA analysis is performed on `<path_to_triangle_file>` file.
 
-    > NB. MANOVA analysis is performed using R via `rpy2` package to transpile code and objects (like dataframes) between R and Python. This makes the execution a bit slower, but testing showed that results of n-way MANOVA using `statsmodels` are not calculated correctly as of the time of writing this docs. Once the issue is resolved, the MANOVA analysis will be performed using statsmodels and execution time will improve.
+    > NB: MANOVA analysis is performed using R via `rpy2` package to transpile code and objects (like dataframes) between R and Python. This makes the execution a bit slower, but testing showed that results of n-way MANOVA using `statsmodels` are not calculated correctly as of the time of writing this docs. Once the issue is resolved, the MANOVA analysis will be performed using statsmodels and execution time will improve.
 
 - parameters and options can be specified in a text file. Use `@<file_name>` to point to the file:
 

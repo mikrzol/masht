@@ -92,14 +92,17 @@ def main():
                                             description='MASH distance toolkit',
                                             fromfile_prefix_chars='@')
 
-    # remove spaces from global_parser
-    global_parser
-
     subparsers = global_parser.add_subparsers(
         title='subcommands', help='available subcommands', dest='subparser_name')
 
     # STATS SUBCOMMAND
     stats_parser = subparsers.add_parser('stats', help='use the stats module')
+
+    '''
+    stats_parser.add_argument(
+        '--input', type=argparse.FileType('r'), help='input file')
+    '''
+
     stats_parser.add_argument('in_d',
                               help='location of 1) the folder with FASTQ or FASTA \
                            files or 2) the file with names of selected files \
@@ -165,6 +168,20 @@ def main():
     mash_parser.set_defaults(func=perform_mash)
 
     # parse args
+    '''
+    # Parse command line arguments once to extract path to input file
+    temp_args, remaining_args = global_parser.parse_known_args()
+    if temp_args.input:
+        with temp_args.input as f:
+            contents = f.read()
+        # Split contents on whitespace delimiters
+        inputs = contents.split()
+        # Append inputs to remaining command line arguments
+        remaining_args.extend(inputs)
+    # Parse command line arguments again with input file contents added
+    args = global_parser.parse_args(remaining_args)
+    '''
+
     args = global_parser.parse_args()
     if args.subparser_name == 'stats':
         if (bool(args.manova) or bool(args.anova)) ^ bool(args.groups_file):
@@ -193,4 +210,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # TODO maybe implement own parser for input from file and pass the correctly parsed args from stdout to the main function?
     main()
