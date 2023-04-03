@@ -1,0 +1,1 @@
+split_blast_res_by_gos(blast_file_path='../testing/BWHT1dR3.blast', seqs_file_path='../server_data/GO_skrypty/BWHT1dR3.scafSeq', go_file_path='../server_data/GO_skrypty/go_terms', output_dir='test_outputs')

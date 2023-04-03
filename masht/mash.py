@@ -13,7 +13,7 @@ def _print_error(proc: subprocess.CompletedProcess, masht_subcommand: str) -> No
     print(proc.stderr.decode())
 
 
-def _get_files(data_path: pathlib.Path) -> list[str]:
+def _get_files(data_path: pathlib.Path) -> list[pathlib.Path]:
     """helper function for getting files
 
     Args:
