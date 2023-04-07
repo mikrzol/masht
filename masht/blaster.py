@@ -3,10 +3,8 @@ import subprocess
 import pathlib
 import pandas as pd
 
-# TODO implement fasta preparation function that does the same as "awk '{print $1}' <fasta_file>"
 
-
-def _read_fasta(fasta_file_path: str) -> dict[str, str]:
+def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
     """Read in fasta file and return a dict with the header as key and the sequence as value
 
     Args:
@@ -16,38 +14,49 @@ def _read_fasta(fasta_file_path: str) -> dict[str, str]:
         dict[str, str]: dict with header as key and sequence as value
     """
 
-    # faster way
     fasta_dict = {}
-    with open(fasta_file_path, 'r') as fasta_file:
-        txt = fasta_file.read().split('>')[1:]
-        for line in txt:
-            line = line.split('\n')
-            # no need for joining the sequence
-            fasta_dict[line[0]] = line[1:]
+
+    if pathlib.Path(fasta_file_path).stat().st_size / 1e9 < 7:
+        # faster way
+        with open(fasta_file_path, 'r') as fasta_file:
+            txt = fasta_file.read().split('>')[1:]
+            for line in txt:
+                line = line.split('\n')
+                # no need for joining the sequence
+                fasta_dict[line[0].split(' ')[0]] = line[1:]
+
+    else:
+        # memory efficient way
+        with open(fasta_file_path, 'r') as fasta_file:
+            curr_header = False
+            for line in fasta_file:
+                if line.startswith('>'):
+                    if curr_header:
+                        fasta_dict[header].append('')
+                    header = line[1:].split(' ')[0]
+                    fasta_dict[header] = []
+                    curr_header = True
+                else:
+                    fasta_dict[header].append(line.rstrip())
+
     return fasta_dict
 
-    '''memory efficient way
-    fasta_dict = {}
-    with open(fasta_file_path, 'r') as fasta_file:
-        for line in fasta_file:
-            if line.startswith('>'):
-                header = line[1:].rstrip()
-                fasta_dict[header] = ''
-            else:
-                fasta_dict[header] += line.rstrip()
-    return fasta_dict
-    '''
 
+def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: str, go_file_path: str or list[str], blast_outfmt: str = 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore', output_dir: str = '.', verbose: bool = 'False') -> None:
+    """Split sequences from seqs_file based on go_file and blast_file. Puts resulting files in appropriate folders based on gene ontologies from the go_file.
 
-def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: str, go_file_path: str or list[str], blast_outfmt: str = '6 qseqid sseqid pident evalue mismatch qstart sstart', output_dir: str = '.', verbose: bool = 'False') -> None:
+        Args:
+            blast_file_path (str or list[str]): path to blast file or list of paths to blast files. NB provide appropriate format for blast_outfmt as a string with qseqid, sseqed and pident at least!
+            seqs_file_path (str): path to fasta file with sequences
+            go_file_path (str or list[str]): path to file(s) with Gen Ontologies or list of paths to go files (from previous step)
+            blast_outfmt (str, optional): blast output format. Defaults to 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore' (standard outfmt 6 from BLAST).
+            output_dir (str, optional): path to output directory. Defaults to '.'.
+            verbose (bool, optional): whether to increase verbosity. Defaults to 'False'.
+    """
 
-    # TODO test this function
-    '''
-    blast_file_path: path to blast result file or list of paths to blast result files
+    print('Splitting blast results by GOs...')
 
-    '''
-
-    # TODO add option to use results from the previous steps as input for blast_file_path and go_file_path
+    # TODO remember to add the info that we require outfmt 6 to the docs
 
     # get file lists to loop over
     blast_files = _get_files(pathlib.Path(blast_file_path)) if not isinstance(
@@ -70,13 +79,8 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
 
         for blast_file in blast_files:
             blast_df = pd.read_csv(blast_file, sep='\t', header=None)
-            # TODO make sure that outfmt in blast_run has correct columns (qseqid, pident) -> would be guaranteed if we just used the default 6 outfmt: https://www.metagenomics.wiki/tools/blast/blastn-output-format-6
-            blast_df.columns = blast_outfmt.split()[1:]
-            '''
-            qseqid = blast_outfmt.split().index('qseqid')
-            pident = blast_outfmt.split().index('pident')
-            sseqid = blast_outfmt.split().index('sseqid')
-            '''
+
+            blast_df.columns = blast_outfmt.split()
 
             # select only the rows with highest e-value for each group based on qseqid
             mask = blast_df.groupby('qseqid')['pident'].transform(
@@ -98,23 +102,64 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
                         id, '\n'.join(seq_file[id])))
 
 
-def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'blastn', evalue: float = 10e-50, num_threads: int = 1, outfmt: str = '6 qseqid sseqid pident evalue mismatch qstart sstart', output_dir: str = '.', verbose: bool = False) -> None:
+def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'blastn', evalue: float = 10e-50, num_threads: int = 4, outfmt: str = '6', output_dir: str = '.', verbose: bool = False) -> list[str]:
+    # generate docs for this function
+    """Run blast on a fasta file
+
+    Args:
+        input_path (str): path to fasta file
+        db (str): name of blast database
+        db_dir (str, optional): path to directory with blast database. Defaults to '.'.
+        blast_type (str, optional): blast type. Defaults to 'blastn'.
+        evalue (float, optional): evalue threshold. Defaults to 10e-50.
+        num_threads (int, optional): number of threads. Defaults to 4.
+        outfmt (str, optional): blast output format. Defaults to '6'. NB use a format with qseqid, sseqed and pident at least, since split_blast_res_by_gos requires those fields!
+        output_dir (str, optional): path to output directory. Defaults to '.'.
+        verbose (bool, optional): whether to increase verbosity. Defaults to False.
+
+    Returns:
+        list[str]: list of paths to blast output files
+    """
+
+    if verbose:
+        print('Running blast...')
+
     # assuming all inputs are in the input_dir folder
     in_files = _get_files(pathlib.Path(input_path))
 
+    blast_files = []
     for file in in_files:
         proc = subprocess.run([blast_type, '-query', file, '-db', db, '-out', f'{file.stem}.blast', '-evalue', str(
             evalue), '-num_threads', str(num_threads), '-outfmt', outfmt], capture_output=True, cwd=pathlib.Path(db_dir))
 
         if proc.returncode != 0:
             _print_error(proc, 'blaster')
-        return
+            return
 
-    # TODO add return value of a list of paths to the blast files
+        if verbose:
+            print(proc.stdout.decode(), end='')
+
+        blast_files.append(f'{db_dir}/{file.stem}.blast')
+
+    return blast_files
 
 
 def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', parse_seqids: bool = True, verbose: bool = False) -> str:
-    blastdb_location = str(pathlib.Path(input_file).parent)
+    # generate docs for this function
+    """Create blast index
+
+    Args:
+        input_file (str): path to input fasta file
+        name (str): name of blast database
+        db_type (str, optional): blast database type. Defaults to 'nucl'.
+        parse_seqids (bool, optional): whether to parse seqids. Defaults to True.
+        verbose (bool, optional): whether to increase verbosity. Defaults to False.
+
+    Returns:
+        str: path to directory with blast database
+    """
+
+    print(f'Creating blast index for {input_file}...')
 
     # create variables for subprocess.run
     parse_seqids = '-parse_seqids' if parse_seqids else ''
@@ -131,10 +176,22 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', parse_
         print(proc.stderr.decode())
         return
 
-    return blastdb_location
+    return str(pathlib.Path(input_file).parent)  # blastdb location
 
 
 def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
+    """Split GO mart file to GO slim files in appropriate folders
+
+    Args:
+        go_file (str): path to GO mart file
+        output_dir (str): path to output directory
+
+    Returns:
+        list[str]: list of paths to GO slim lists
+    """
+
+    print(f'Creating GO slim lists from {go_file}...')
+
     # create output dir
     pathlib.Path(f'{output_dir}/go_lists').mkdir(
         parents=True, exist_ok=True)
@@ -159,5 +216,18 @@ def query_for_go_terms() -> None:
     pass
 
 
-split_blast_res_by_gos(blast_file_path='../testing/BWHT1dR3.blast', seqs_file_path='../testing/BWHT1dR3.fasta',
-                       go_file_path='../testing/go_terms', output_dir='test_outputs')
+# only for testing
+if __name__ == '__main__':
+
+    '''
+    db_dir = blast_create_index(input_file='../testing/Hv_all_isoforms_sequence_mart_export.fasta',
+                                name='test', db_type='nucl', parse_seqids=True, verbose=True)
+
+    blast_files = blast_run(input_path='../testing/BWHT1dR3.fasta', db='test', db_dir='../testing')
+
+    go_file = go_mart_to_go_slim_lists(
+        go_file='../server_data/GO_skrypty/Hv_all_isoforms_GO_mart_export.txt', output_dir='../testing')
+    '''
+
+    split_blast_res_by_gos(blast_file_path='../testing/BWHT1dR3.blast', seqs_file_path='../testing/BWHT1dR3.fasta',
+                           go_file_path='../testing/go_lists', output_dir='test_outputs')
