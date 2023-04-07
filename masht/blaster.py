@@ -54,9 +54,8 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
             verbose (bool, optional): whether to increase verbosity. Defaults to 'False'.
     """
 
-    print('Splitting blast results by GOs...')
-
-    # TODO remember to add the info that we require outfmt 6 to the docs
+    if verbose:
+        print('Splitting blast results by GOs...')
 
     # get file lists to loop over
     blast_files = _get_files(pathlib.Path(blast_file_path)) if not isinstance(
@@ -73,11 +72,17 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
         tun = (go_df['Gene stable ID'] + '|' +
                go_df['Transcript stable ID']).unique()
 
+        if verbose:
+            print(f'Splitting {go.stem} file with {len(tun)} IDs...')
+
         # create output dir
         pathlib.Path(f'{output_dir}/{go.stem}').mkdir(
             parents=True, exist_ok=True)
 
         for blast_file in blast_files:
+            if verbose:
+                print(f'Processing {blast_file.stem} file...')
+
             blast_df = pd.read_csv(blast_file, sep='\t', header=None)
 
             blast_df.columns = blast_outfmt.split()

@@ -4,8 +4,19 @@ import pathlib
 
 import mash
 import stats
+import blaster
 
-# TODO implement perform_blaster function
+
+def perform_blaster(args: argparse.ArgumentParser) -> None:
+    """perform the blaster subcommand
+
+    Args:
+        args (argparse.ArgumentParser): args created in the main function
+        bin_path (str): directory with the mash binary (obsolete)
+        data_path (pathlib.Path): location of the dir/ path with files to work on
+    """
+    # TODO implement this function
+    pass
 
 
 def perform_stats(args: argparse.ArgumentParser, bin_path: list[str], data_path: pathlib.Path) -> None:
@@ -96,6 +107,69 @@ def main():
 
     subparsers = global_parser.add_subparsers(
         title='subcommands', help='available subcommands', dest='subparser_name')
+
+    # BLASTER SUBCOMMAND
+    blaster_parser = subparsers.add_parser(
+        'blaster', help='use the blaster module')
+
+    # BLASTER - SHARED ARGUMENTS
+    blaster_parser.add_argument(
+        '-o', '--output_dir', help='output directory for the results')
+
+    blaster_parser.add_argument(
+        '-outfmt', help='output format for BLAST results. Default: 6. Uses BLAST+ format codes.')
+
+    blaster_parser.add_argument(
+        '-v', '--verbose', action='store_true', help='verbose output')
+
+    blaster_parser.add_argument(
+        '-n', '--name', help='name of the BLAST database to create or use')
+
+    # BLASTER - CREATING BLAST DATABASE
+    blaster_parser.add_argument(
+        '-cdb', '--create_db', action='store_true', help='create BLAST database from the -db_fasta FASTA file')
+
+    blaster_parser.add_argument(
+        '-dbt', '--db_type', help='type of the BLAST database to create (nucl or prot). Default: nucl')
+
+    blaster_parser.add_argument('--parse_seqids', action='store_true',
+                                help='parse SeqIDs in FASTA file when creating BLAST database')
+
+    blaster_parser.add_argument('-db_fasta',
+                                help='location of the FASTA file to use for creating BLAST database')
+
+    # BLASTING
+    blaster_parser.add_argument(
+        '-b', '--blast', action='store_true', help='perform BLAST searches on selected files')
+
+    blaster_parser.add_argument(
+        '--db_dir', help='location of the BLAST database to use. Inferred automatically if --create_db is used')
+
+    blaster_parser.add_argument(
+        '-q', '--query', help='query file to use for BLAST searches. Can either be a FASTA file, a file pointing to FASTA files (one per line) or a folder with FASTA files')
+
+    blaster_parser.add_argument('-e', '--evalue', type=float,
+                                help='e-value threshold for BLAST search. Default: 10e-50')
+
+    blaster_parser.add_argument('--num_threads', type=int,
+                                help='number of threads to use for BLAST search. Default: 4')
+
+    # CREATING GO SLIM LISTS FROM GO MART FILE
+    blaster_parser.add_argument(
+        '-gsl', '--go_slim_list', help='create GO slim lists from provided GO Mart file')
+
+    # SPLITTING FASTA FILE BY GOs AND BLAST RESULTS
+    blaster_parser.add_argument(
+        '-s', '--split', help='split FASTA file provided here by GOs and BLAST results')
+
+    blaster_parser.add_argument(
+        '--go', help='location of the folder with go_list subfolders created by --go_slim_list. Inferred automatically if --go_slim_list is used')
+
+    blaster_parser.add_argument(
+        '--in_blast_file', help='location of the BLAST results file(s). Inferred automatically if --blast is used')
+
+    # set function to perform when calling the command
+    blaster_parser.set_defaults(func=perform_blaster)
 
     # STATS SUBCOMMAND
     stats_parser = subparsers.add_parser('stats', help='use the stats module')
