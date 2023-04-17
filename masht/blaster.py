@@ -151,7 +151,7 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
     return blast_files
 
 
-def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', parse_seqids: bool = True, verbose: bool = False) -> str:
+def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_parse_seqids: bool = False, verbose: bool = False) -> str:
     # generate docs for this function
     """Create blast index
 
@@ -159,7 +159,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', parse_
         input_file (str): path to input fasta file
         name (str): name of blast database
         db_type (str, optional): blast database type. Defaults to 'nucl'.
-        parse_seqids (bool, optional): whether to parse seqids. Defaults to True.
+        no_parse_seqids (bool, optional): whether to NOT parse seqids. Defaults to False.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
 
     Returns:
@@ -169,7 +169,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', parse_
     print(f'Creating blast index for {input_file}...')
 
     # create variables for subprocess.run
-    parse_seqids = '-parse_seqids' if parse_seqids else ''
+    parse_seqids = '-parse_seqids' if not no_parse_seqids else ''
 
     # run makeblastdb
     proc = subprocess.run(['makeblastdb', '-in', pathlib.Path(input_file), '-dbtype',
@@ -229,7 +229,7 @@ def query_for_go_terms() -> None:
 if __name__ == '__main__':
 
     db_dir = blast_create_index(input_file='../testing/Hv_all_isoforms_sequence_mart_export.fasta',
-                                name='test', db_type='nucl', parse_seqids=True, verbose=True)
+                                name='test', db_type='nucl', no_parse_seqids=False, verbose=True)
 
     blast_files = blast_run(
         input_path='../testing/BWHT1dR3.fasta', db='test', db_dir='../testing', verbose=True)

@@ -156,7 +156,7 @@ def main():
         '-o', '--output_dir', help='output directory for the results')
 
     blaster_parser.add_argument(
-        '-outfmt', help='output format for BLAST results. Default: 6. Uses BLAST+ format codes.')
+        '-outfmt', '--outfmt', help='output format for BLAST results. Default: 6. Uses BLAST+ format codes.')
 
     blaster_parser.add_argument(
         '-v', '--verbose', action='store_true', help='verbose output')
@@ -189,9 +189,6 @@ def main():
 
     blaster_parser.add_argument('-e', '--evalue', type=float,
                                 help='e-value threshold for BLAST search. Default: 10e-50')
-
-    blaster_parser.add_argument(
-        '--outfmt', help='BLAST output format', default='6')
 
     blaster_parser.add_argument('--num_threads', type=int, default=4,
                                 help='number of threads to use for BLAST search. Default: 4')

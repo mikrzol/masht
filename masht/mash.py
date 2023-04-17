@@ -1,6 +1,8 @@
 import subprocess
 import pathlib
 
+# TODO add a function that loops over the go_lists and performs the analysis on each file individually
+
 
 def _print_error(proc: subprocess.CompletedProcess, masht_subcommand: str) -> None:
     # TODO add some logic to handle errors so you can use just this function for error handling (not checking with proc.returncode)

@@ -1,0 +1,18 @@
+|`-h`|`--help`|show this help message and exit
+|`-o`|`--output_dir`| output directory for the results|
+|`-outfmt`|`--outfmt`|output format for BLAST results. Default: 6. Uses BLAST+ format codes.|
+|`-v`|`--verbose`|verbose output|
+|`-n`|`--name`|name of the BLAST database to create or use|
+|`-cdb`|`--create_db`|create BLAST database from the -db_fasta FASTA file|
+|`-dbt`|`--db_type`|type of the BLAST database to create (nucl or prot). Default: nucl.|
+||`--no_parse_seqids`|DO NOT parse SeqIDs in FASTA file when creating BLAST database|
+||`--db_fasta`|location of the FASTA file to use for creating BLAST database|
+|`-b`|`--blast`|perform BLAST searches on selected files|
+||`--db_dir`|location of the BLAST database to use. Inferred automatically if `--create_db` is used|
+|`-q`|`--query query`|file to use for BLAST searches. Can either be a FASTA file or a file pointing to FASTA files (one per line) or a folder with FASTA files|
+|`-e`|`--evalue`|e-value threshold for BLAST search. Default: 10e-50|
+||`--num_threads`|number of threads to use for BLAST search. Default: 4|
+|`-gsl`|`--go_slim_list`|create GO slim lists from provided GO Mart file|
+|`-s`|`--split`|split FASTA file provided here by GOs and BLAST results|
+||`--go`|location of the folder with go_list subfolders created by --go_slim_list. Inferred automatically if `--go_slim_list is used`|
+||`--in_blast_file`|location of the BLAST results file(s). Inferred automatically if `--blast` is used|

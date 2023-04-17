@@ -229,6 +229,54 @@ No installation is necessary - the package should work right away.
 |`-ss`|`--ss_type`|type of sum of squares to use for ANOVA. Defaults to 2|
 |`-v`|`--verbose`|print more descriptions of performed actions to the console|
 
+### blaster module
+
+All tasks related to BLAST (creation of index, blasting, splitting results by GO terms etc.) can be performed with one command. This way paths for input files for subsequent steps are inferred automatically. Example file with arguments would look like this:
+
+```txt
+--create_db
+--db_fasta
+../path/to/fasta_file_to_create_index_on
+--name
+test
+--blast
+--query
+../path/to/file(s)_to_blast
+--evalue
+1e-49
+--output_dir
+test_outputs
+--go_slim_list
+../path/to/file(s)_with_go_terms
+--split
+../path/to/file(s)_with_sequences_to_split_by_go_terms
+--verbose
+```
+
+#### blaster options (flags)
+
+|option|long name|description|
+|---|---|---|
+|`-b`|`--blast`|perform BLAST searches on selected files|
+|`-cdb`|`--create_db`|create BLAST database from the -db_fasta FASTA file|
+|`-dbt`|`--db_type`|type of the BLAST database to create (nucl or prot). Default: nucl.|
+|`-e`|`--evalue`|e-value threshold for BLAST search. Default: 10e-50|
+|`-gsl`|`--go_slim_list`|create GO slim lists from provided GO Mart file|
+|`-h`|`--help`|show this help message and exit
+|`-n`|`--name`|name of the BLAST database to create or use|
+|`-o`|`--output_dir`| output directory for the results|
+|`-outfmt`|`--outfmt`|output format for BLAST results. Default: 6. Uses BLAST+ format codes.|
+|`-q`|`--query query`|file to use for BLAST searches. Can either be a FASTA file or a file pointing to FASTA files (one per line) or a folder with FASTA files|
+|`-s`|`--split`|split FASTA file provided here by GOs and BLAST results|
+|`-v`|`--verbose`|verbose output|
+||`--db_dir`|location of the BLAST database to use. Inferred automatically if `--create_db` is used|
+||`--db_fasta`|location of the FASTA file to use for creating BLAST database|
+||`--go`|location of the folder with go_list subfolders created by --go_slim_list. Inferred automatically if `--go_slim_list is used`|
+||`--in_blast_file`|location of the BLAST results file(s). Inferred automatically if `--blast` is used|
+||`--no_parse_seqids`|DO NOT parse SeqIDs in FASTA file when creating BLAST database|
+||`--num_threads`|number of threads to use for BLAST search. Default: 4|
+
+
 ## Help
 
 To access help, run the package with either -h or --help, e.g.:
