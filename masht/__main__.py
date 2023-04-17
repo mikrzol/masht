@@ -12,14 +12,41 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
 
     Args:
         args (argparse.ArgumentParser): args created in the main function
-        bin_path (str): directory with the mash binary (obsolete)
-        data_path (pathlib.Path): location of the dir/ path with files to work on
     """
-    # TODO implement this function
-    pass
+
+    db_dir = '.'
+    if args.create_db:
+        db_dir = blaster.blast_create_index(input_file=args.db_fasta, name=args.name,
+                                            db_type=args.db_type or 'nucl', parse_seqids=args.parse_seqids, verbose=args.verbose)
+
+    blast_files = []
+    if args.blast:
+        blast_files = blaster.blast_run(
+            input_path=args.query,
+            db=args.name,
+            db_dir=db_dir,
+            evalue=float(args.evalue) or 1e-49,
+            num_threads=int(args.num_threads),
+            outfmt=args.outfmt or '6',
+            output_dir=args.output_dir,
+            verbose=args.verbose)
+
+    go_files = []
+    if args.go_slim_list:
+        go_files = blaster.go_mart_to_go_slim_lists(
+            go_file=args.go_slim_list, output_dir=args.output_dir)
+
+    if args.split:
+        blaster.split_blast_res_by_gos(
+            blast_file_path=blast_files or args.in_blast_file,
+            go_file_path=go_files or args.go,
+            seqs_file_path=args.split,
+            blast_outfmt=args.outfmt or 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore',
+            output_dir=args.output_dir,
+            verbose=args.verbose)
 
 
-def perform_stats(args: argparse.ArgumentParser, bin_path: list[str], data_path: pathlib.Path) -> None:
+def perform_stats(args: argparse.ArgumentParser) -> None:
     """perform the stats subcommand
 
     Args:
@@ -27,6 +54,12 @@ def perform_stats(args: argparse.ArgumentParser, bin_path: list[str], data_path:
         bin_path (str): directory with the mash binary (obsolete)
         data_path (pathlib.Path): location of the dir/ path with files to work on
     """
+
+    data_path = pathlib.Path(args.in_d)
+
+    # TESTING - remove paths later
+    bin_path = 'bin/'
+
     if args.n_dimensions:
         args.n_dimensions = int(args.n_dimensions)
     if args.pc_number:
@@ -50,7 +83,7 @@ def perform_stats(args: argparse.ArgumentParser, bin_path: list[str], data_path:
                      groups_file=args.groups_file, mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
 
 
-def perform_mash(args: argparse.ArgumentParser, bin_path: str, data_path: pathlib.Path) -> None:
+def perform_mash(args: argparse.ArgumentParser) -> None:
     """perform mash command
 
     Args:
@@ -58,6 +91,12 @@ def perform_mash(args: argparse.ArgumentParser, bin_path: str, data_path: pathli
         bin_path (str): directory with the mash binary
         data_path (pathlib.Path): location of the dir/ path with files to work on
     """
+
+    data_path = pathlib.Path(args.in_d)
+
+    # TESTING - remove paths later
+    bin_path = 'bin/'
+
     # ORDER MATTERS
     # sketch
     sketch_path = ''
@@ -132,10 +171,10 @@ def main():
     blaster_parser.add_argument(
         '-dbt', '--db_type', help='type of the BLAST database to create (nucl or prot). Default: nucl')
 
-    blaster_parser.add_argument('--parse_seqids', action='store_true',
-                                help='parse SeqIDs in FASTA file when creating BLAST database')
+    blaster_parser.add_argument('--parse_seqids', action='store_false',
+                                help='DO NOT parse SeqIDs in FASTA file when creating BLAST database')
 
-    blaster_parser.add_argument('-db_fasta',
+    blaster_parser.add_argument('--db_fasta',
                                 help='location of the FASTA file to use for creating BLAST database')
 
     # BLASTING
@@ -151,7 +190,10 @@ def main():
     blaster_parser.add_argument('-e', '--evalue', type=float,
                                 help='e-value threshold for BLAST search. Default: 10e-50')
 
-    blaster_parser.add_argument('--num_threads', type=int,
+    blaster_parser.add_argument(
+        '--outfmt', help='BLAST output format', default='6')
+
+    blaster_parser.add_argument('--num_threads', type=int, default=4,
                                 help='number of threads to use for BLAST search. Default: 4')
 
     # CREATING GO SLIM LISTS FROM GO MART FILE
@@ -265,11 +307,6 @@ def main():
                 '--anova or --manova and --groups_file must be given together!')
 
     # VARIABLES
-    data_path = pathlib.Path(args.in_d)
-
-    # TESTING - remove paths later
-    bin_path = 'bin/'
-
     # check if output dir exists and create one if necessary
     args.output_dir = args.output_dir.strip()
     pathlib.Path(f'{args.output_dir}').mkdir(
@@ -282,7 +319,7 @@ def main():
     # perform_stats(args=args, bin_path=bin_path, data_path=data_path)
 
     # perform appropriate function
-    args.func(args, bin_path, data_path)
+    args.func(args)
 
 
 if __name__ == '__main__':

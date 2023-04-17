@@ -1,4 +1,4 @@
-from masht.mash import _get_files, _print_error
+from mash import _get_files, _print_error
 import subprocess
 import pathlib
 import pandas as pd
@@ -27,10 +27,12 @@ def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
 
     else:
         # memory efficient way
+        # TODO does this work correctly?
         with open(fasta_file_path, 'r') as fasta_file:
             curr_header = False
             for line in fasta_file:
                 if line.startswith('>'):
+                    # this if has to be replaced with something faster
                     if curr_header:
                         fasta_dict[header].append('')
                     header = line[1:].split(' ')[0]
@@ -221,18 +223,21 @@ def query_for_go_terms() -> None:
     pass
 
 
+'''
 # only for testing
+# change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
 
-    '''
     db_dir = blast_create_index(input_file='../testing/Hv_all_isoforms_sequence_mart_export.fasta',
                                 name='test', db_type='nucl', parse_seqids=True, verbose=True)
 
-    blast_files = blast_run(input_path='../testing/BWHT1dR3.fasta', db='test', db_dir='../testing')
+    blast_files = blast_run(
+        input_path='../testing/BWHT1dR3.fasta', db='test', db_dir='../testing', verbose=True)
 
     go_file = go_mart_to_go_slim_lists(
         go_file='../server_data/GO_skrypty/Hv_all_isoforms_GO_mart_export.txt', output_dir='../testing')
-    '''
 
-    split_blast_res_by_gos(blast_file_path='../testing/BWHT1dR3.blast', seqs_file_path='../testing/BWHT1dR3.fasta',
-                           go_file_path='../testing/go_lists', output_dir='test_outputs')
+    split_blast_res_by_gos(blast_file_path=blast_files, seqs_file_path='../testing/BWHT1dR3.fasta',
+                           go_file_path=go_file, output_dir='test_outputs')
+
+'''
