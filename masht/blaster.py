@@ -1,4 +1,4 @@
-from mash import _get_files, _print_error
+from mash import _get_files, _error_present
 import subprocess
 import pathlib
 import pandas as pd
@@ -27,19 +27,18 @@ def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
 
     else:
         # memory efficient way
-        # TODO does this work correctly?
-        with open(fasta_file_path, 'r') as fasta_file:
-            curr_header = False
-            for line in fasta_file:
-                if line.startswith('>'):
-                    # this if has to be replaced with something faster
-                    if curr_header:
-                        fasta_dict[header].append('')
-                    header = line[1:].split(' ')[0]
-                    fasta_dict[header] = []
-                    curr_header = True
-                else:
-                    fasta_dict[header].append(line.rstrip())
+        while not (first_line := fasta_file.readline()).startswith('>'):
+            first_line = fasta_file.readline()
+        header = first_line[1:].split(' ')[0].rstrip()
+        fasta_dict[header] = []
+
+        for line in fasta_file:
+            if line.startswith('>'):
+                fasta_dict[header].append('')
+                header = line[1:].split(' ')[0].rstrip()
+                fasta_dict[header] = []
+            else:
+                fasta_dict[header].append(line.rstrip())
 
     return fasta_dict
 
@@ -139,8 +138,7 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
         proc = subprocess.run([blast_type, '-query', file, '-db', db, '-out', f'{file.stem}.blast', '-evalue', str(
             evalue), '-num_threads', str(num_threads), '-outfmt', outfmt], capture_output=True, cwd=pathlib.Path(db_dir))
 
-        if proc.returncode != 0:
-            _print_error(proc, 'blaster')
+        if _error_present(proc, 'blast'):
             return
 
         if verbose:

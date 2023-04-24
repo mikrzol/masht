@@ -4,15 +4,22 @@ import pathlib
 # TODO add a function that loops over the go_lists and performs the analysis on each file individually
 
 
-def _print_error(proc: subprocess.CompletedProcess, masht_subcommand: str) -> None:
-    # TODO add some logic to handle errors so you can use just this function for error handling (not checking with proc.returncode)
-    """helper function for printing errors
+def _error_present(proc: subprocess.CompletedProcess, masht_subcommand: str) -> bool:
+    """helper function for checking and printing errors
 
     Args:
-        proc (subprocess.CompletedProcess): subprocess.CompletedProcess object
+        proc (subprocess.CompletedProcess): a completed process
+        masht_subcommand (str): name of the masht subcommand
+
+    Returns:
+        bool: whether an error occurred
     """
-    print(f'\nMASHt {masht_subcommand} encountered an error, see below:\n')
-    print(proc.stderr.decode())
+    err = False
+    if proc.returncode != 0:
+        print(f'\nMASHt {masht_subcommand} encountered an error, see below:\n')
+        print(proc.stderr.decode())
+        err = True
+    return err
 
 
 def _get_files(data_path: pathlib.Path) -> list[pathlib.Path]:
@@ -89,16 +96,14 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_path: pathlib.Path,
                 proc = subprocess.run([f'{bin_path}mash', mash_cmd,
                                        file, *query_files],
                                       capture_output=True)
-                if proc.returncode != 0:
-                    _print_error(proc, mash_cmd)
+                if _error_present(proc, mash_cmd):
                     return
 
             else:
                 proc = subprocess.run([f'{bin_path}mash', mash_cmd,
                                        file],
                                       capture_output=True)
-                if proc.returncode != 0:
-                    _print_error(proc, mash_cmd)
+                if _error_present(proc, mash_cmd):
                     return
 
             if console_only.get(mash_cmd) or verbose:
@@ -143,8 +148,7 @@ def dist(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbose
                            *files],
                           capture_output=True
                           )
-    if proc.returncode != 0:
-        _print_error(proc, 'dist')
+    if _error_present(proc, 'dist'):
         return
 
     if verbose:
@@ -193,8 +197,7 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
                            ],
                           capture_output=True)
 
-    if proc.returncode != 0:
-        _print_error(proc, 'sketch')
+    if _error_present(proc, 'sketch'):
         return
 
     if verbose:
@@ -236,8 +239,7 @@ def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: s
                                    *files,
                                    ],
                                   capture_output=True)
-            if proc.returncode != 0:
-                _print_error(proc, 'paste')
+            if _error_present(proc, 'paste'):
                 return
         # .msh file
         else:
@@ -247,8 +249,7 @@ def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: s
                                    data_path,
                                    ],
                                   capture_output=True)
-            if proc.returncode != 0:
-                _print_error(proc, 'paste')
+            if _error_present(proc, 'paste'):
                 return
     # dir
     else:
@@ -259,8 +260,7 @@ def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: s
                                *files,
                                ],
                               capture_output=True)
-        if proc.returncode != 0:
-            _print_error(proc, 'paste')
+        if _error_present(proc, 'paste'):
             return
 
 
