@@ -1,7 +1,46 @@
 import subprocess
 import pathlib
 
-# TODO add a function that loops over the go_lists and performs the analysis on each file individually
+# TODO add a MULTITHREADED!!! function that loops over the go_lists and performs the analysis on each file individually
+
+
+def _task(args: list):
+    start = args[0]
+    step = args[1]
+    arr = args[2]
+    for x in range(start, start+step):
+        if x < len(arr):
+            sketch_path = sketch('bin/', arr[x], arr[x])
+            # TODO this probably needs await?
+            # triangle('bin/', pathlib.Path(sketch_path), arr[x])
+
+
+def analyze_all(go_dir: str):
+    import multiprocessing
+    from itertools import repeat
+    import time
+
+    subdirs = [f for f in pathlib.Path(go_dir).iterdir() if f.is_dir()]
+
+    '''
+    start_time = time.time()
+    step = 5
+    starts = [x for x in range(0, len(subdirs), step)]
+
+    with multiprocessing.Pool() as pool:
+        pool.map(_task, zip(starts, repeat(step), repeat(subdirs)))
+
+    duration = time.time() - start_time
+    print(f'multiprocessed time: {duration} seconds')
+    '''
+
+    start_time = time.time()
+    for subdir in subdirs:
+        sketch_path = sketch('bin/', subdir, subdir)
+        triangle('bin/', pathlib.Path(sketch_path), subdir)
+
+    duration = time.time() - start_time
+    print(f'sequential time: {duration} seconds')
 
 
 def _error_present(proc: subprocess.CompletedProcess, masht_subcommand: str) -> bool:
@@ -134,7 +173,7 @@ def bounds(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
 
 
 def dist(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbose: bool = False) -> None:
-    """calculate mash distance on between wanted files and save result to {output_path}/distances.tsv
+    """calculate mash distance between wanted files and save result to {output_path}/distances.tsv
 
     Args:
         bin_path (str): list of paths with mash binary
@@ -186,7 +225,8 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
         output_path (str, optional): location of the directory to put the sketches.msh file into. Defaults to '.'
         verbose: increase verbosity
     """
-    print('\nCreating mash sketches...')
+    if verbose:
+        print('\nCreating mash sketches...')
 
     files = _get_files(data_path)
 
@@ -206,6 +246,7 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
     pathlib.Path(output_path).mkdir(
         parents=True, exist_ok=True)
 
+    # TODO use this to create sketches.msh in the appropriate folder
     # move the *_sketches.msh files to a desired location (mash can only generate the sketch file to ./ ) --> TESTING (acually, it does do that)
     sketch_path = ''
 
@@ -215,7 +256,8 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
         capture_output=not verbose)
     sketch_path = f'{output_path}/sketches.msh'
 
-    print('\nMash sketches created!')
+    if verbose:
+        print('\nMash sketches created!')
 
     return sketch_path
 
@@ -291,3 +333,11 @@ def triangle(bin_path: str, data_path: pathlib.Path, output_path: str = '.', ver
     print('\nMatrix of distances between sequences in selected files:')
     _loop_over_all_sketch_files(data_path=data_path, bin_path=bin_path,
                                 mash_cmd='triangle', verbose=verbose, output_path=output_path)
+
+
+def main():
+    analyze_all('test_outputs/')
+
+
+if __name__ == '__main__':
+    main()

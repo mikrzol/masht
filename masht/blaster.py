@@ -56,14 +56,17 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
     """
 
     if verbose:
-        print('Splitting blast results by GOs...')
+        print('Splitting blast results by GOs...\n')
 
     # get file lists to loop over
     blast_files = _get_files(pathlib.Path(blast_file_path)) if not isinstance(
-        blast_file_path, list) else map(pathlib.Path, blast_file_path)
+        blast_file_path, list) else list(map(pathlib.Path, blast_file_path))
     go_files = _get_files(pathlib.Path(go_file_path)) if not isinstance(
-        go_file_path, list) else map(pathlib.Path, go_file_path)
+        go_file_path, list) else list(map(pathlib.Path, go_file_path))
     seqs_files = _get_files(pathlib.Path(seqs_file_path))
+
+    print(
+        f'blast_files = {blast_files}, typeof blast_file_path = {type(blast_file_path)}')
 
     for go in go_files:
         # read in go file
@@ -164,7 +167,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
         str: path to directory with blast database
     """
 
-    print(f'Creating blast index for {input_file}...')
+    print(f'Creating blast index for {input_file} ...')
 
     # create variables for subprocess.run
     parse_seqids = '-parse_seqids' if not no_parse_seqids else ''

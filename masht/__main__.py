@@ -14,17 +14,18 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
         args (argparse.ArgumentParser): args created in the main function
     """
 
+    # either change this to '' or add default val to --db_dir arg = '' (or None)
     db_dir = '.'
     if args.create_db:
         db_dir = blaster.blast_create_index(input_file=args.db_fasta, name=args.name,
-                                            db_type=args.db_type or 'nucl', parse_seqids=args.parse_seqids, verbose=args.verbose)
+                                            db_type=args.db_type or 'nucl', no_parse_seqids=args.no_parse_seqids, verbose=args.verbose)
 
     blast_files = []
     if args.blast:
         blast_files = blaster.blast_run(
             input_path=args.query,
             db=args.name,
-            db_dir=db_dir,
+            db_dir=args.db_dir or db_dir,
             evalue=float(args.evalue) or 1e-49,
             num_threads=int(args.num_threads),
             outfmt=args.outfmt or '6',
@@ -35,6 +36,8 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
     if args.go_slim_list:
         go_files = blaster.go_mart_to_go_slim_lists(
             go_file=args.go_slim_list, output_dir=args.output_dir)
+
+    print(f'\n\ngo_files = {go_files}\n\n')
 
     if args.split:
         blaster.split_blast_res_by_gos(
@@ -171,7 +174,7 @@ def main():
     blaster_parser.add_argument(
         '-dbt', '--db_type', help='type of the BLAST database to create (nucl or prot). Default: nucl')
 
-    blaster_parser.add_argument('--parse_seqids', action='store_false',
+    blaster_parser.add_argument('--no_parse_seqids', action='store_true',
                                 help='DO NOT parse SeqIDs in FASTA file when creating BLAST database')
 
     blaster_parser.add_argument('--db_fasta',
