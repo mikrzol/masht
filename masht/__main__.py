@@ -8,6 +8,7 @@ import blaster
 
 
 def perform_blaster(args: argparse.ArgumentParser) -> None:
+    # TODO use error logic to stop the program if an error occurs (instead of just ordering operations)
     """perform the blaster subcommand
 
     Args:
@@ -50,6 +51,7 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
 
 
 def perform_stats(args: argparse.ArgumentParser) -> None:
+    # TODO use error logic to stop the program if an error occurs (instead of just ordering operations)
     """perform the stats subcommand
 
     Args:
@@ -87,6 +89,7 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
 
 
 def perform_mash(args: argparse.ArgumentParser) -> None:
+    # TODO use error logic to stop the program if an error occurs (instead of just ordering operations)
     """perform mash command
 
     Args:
@@ -140,6 +143,9 @@ def perform_mash(args: argparse.ArgumentParser) -> None:
     # mash (fully custom)
     if args.mash:
         subprocess.run(args.mash.split())
+
+    if args.analyze_all:
+        mash.analyze_all(go_dir=data_path)
 
 
 def main():
@@ -261,6 +267,8 @@ def main():
                            files or 2) the file with names of selected files \
                                (names are relative to package location)')
     detailed = mash_parser.add_argument_group('detailed use')
+    detailed.add_argument(
+        '-a', '--analyze_all', action='store_true', help='analyze files from all subdirectories of a given directory containing results of splitting blast results by GOs (blaster --split results)')
     detailed.add_argument('-b', '--bounds', action='store_true',
                           help='show Mash error bounds of selected files')
     detailed.add_argument('-d', '--distance', action='store_true',

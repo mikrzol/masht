@@ -112,11 +112,10 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
 
 
 def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'blastn', evalue: float = 10e-50, num_threads: int = 4, outfmt: str = '6', output_dir: str = '.', verbose: bool = False) -> list[str]:
-    # generate docs for this function
     """Run blast on a fasta file
 
     Args:
-        input_path (str): path to fasta file
+        input_path (str): path to fasta file(s)
         db (str): name of blast database
         db_dir (str, optional): path to directory with blast database. Defaults to '.'.
         blast_type (str, optional): blast type. Defaults to 'blastn'.
@@ -133,7 +132,7 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
     if verbose:
         print('Running blast...')
 
-    # assuming all inputs are in the input_dir folder
+    # assuming all inputs are in the input_path folder
     in_files = _get_files(pathlib.Path(input_path))
 
     blast_files = []
@@ -188,6 +187,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
 
 
 def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
+    # TODO rewrite this to use multiprocessing
     """Split GO mart file to GO slim files in appropriate folders
 
     Args:
@@ -229,16 +229,15 @@ def query_for_go_terms() -> None:
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
 
-    db_dir = blast_create_index(input_file='../testing/Hv_all_isoforms_sequence_mart_export.fasta',
+    db_dir = blast_create_index(input_file='/mnt/d/IGR_temp/blaster_test/Hv_all_isoforms_sequence_mart_export.fasta',
                                 name='test', db_type='nucl', no_parse_seqids=False, verbose=True)
 
     blast_files = blast_run(
-        input_path='../testing/BWHT1dR3.fasta', db='test', db_dir='../testing', verbose=True)
+        input_path='/mnt/d/IGR_temp/blaster_test/inputs.txt', db='test', db_dir=db_dir, verbose=True)
 
     go_file = go_mart_to_go_slim_lists(
-        go_file='../server_data/GO_skrypty/Hv_all_isoforms_GO_mart_export.txt', output_dir='../testing')
+        go_file='/mnt/d/IGR_temp/blaster_test/Hv_all_isoforms_GO_mart_export.txt', output_dir='/mnt/d/IGR_temp/blaster_test')
 
-    split_blast_res_by_gos(blast_file_path=blast_files, seqs_file_path='../testing/BWHT1dR3.fasta',
-                           go_file_path=go_file, output_dir='test_outputs')
-
+    split_blast_res_by_gos(blast_file_path='/mnt/d/IGR_temp/blaster_test/inputs_blast.txt', seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
+                           go_file_path=go_file, output_dir='/mnt/d/IGR_temp/go_lists/')
 '''

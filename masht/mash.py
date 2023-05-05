@@ -1,46 +1,38 @@
 import subprocess
 import pathlib
 
-# TODO add a MULTITHREADED!!! function that loops over the go_lists and performs the analysis on each file individually
 
-
-def _task(args: list):
+def _multiproc_task(args: list):
+    # TODO add subsequent steps of analysis to this task (from stats package)
     start = args[0]
     step = args[1]
     arr = args[2]
     for x in range(start, start+step):
         if x < len(arr):
-            sketch_path = sketch('bin/', arr[x], arr[x])
-            # TODO this probably needs await?
-            # triangle('bin/', pathlib.Path(sketch_path), arr[x])
+            sketch_path = sketch('bin/', data_path=arr[x], output_path=arr[x])
+            triangle('bin/', data_path=pathlib.Path(sketch_path),
+                     output_path=arr[x])
 
 
 def analyze_all(go_dir: str):
+    # TODO add a way to use only the .fasta files in subdirectories?
+    """Analyze all files in subdirecotories of go_dir (created with blaster.split_blast_res_by_gos). 
+
+    Args:
+        go_dir (str): path to directory created with blaster.split_blast_res_by_gos
+    """
     import multiprocessing
     from itertools import repeat
-    import time
 
+    # get only subdirs of go_dir. Assumes all subdirs contain stuff to analyze!
     subdirs = [f for f in pathlib.Path(go_dir).iterdir() if f.is_dir()]
 
-    '''
-    start_time = time.time()
+    # each process will analyze 5 subdirs (files)
     step = 5
     starts = [x for x in range(0, len(subdirs), step)]
 
     with multiprocessing.Pool() as pool:
-        pool.map(_task, zip(starts, repeat(step), repeat(subdirs)))
-
-    duration = time.time() - start_time
-    print(f'multiprocessed time: {duration} seconds')
-    '''
-
-    start_time = time.time()
-    for subdir in subdirs:
-        sketch_path = sketch('bin/', subdir, subdir)
-        triangle('bin/', pathlib.Path(sketch_path), subdir)
-
-    duration = time.time() - start_time
-    print(f'sequential time: {duration} seconds')
+        pool.map(_multiproc_task, zip(starts, repeat(step), repeat(subdirs)))
 
 
 def _error_present(proc: subprocess.CompletedProcess, masht_subcommand: str) -> bool:
@@ -129,7 +121,8 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_path: pathlib.Path,
     # TESTING - remove paths loop later
     for file in files:
         if file.suffix == '.msh':
-            print(f'============= {file}: =============')
+            if verbose:
+                print(f'============= {file}: =============')
             if query:
                 query_files = _get_files(query)
                 proc = subprocess.run([f'{bin_path}mash', mash_cmd,
@@ -316,15 +309,7 @@ def triangle(bin_path: str, data_path: pathlib.Path, output_path: str = '.', ver
         output_path (str, optional): location of the output directory. Defaults to '.'.
         verbose (bool, optional): whether to give more info on performed operations to the console. Defaults to False.
     """
-    print('\nMatrix of distances between sequences in selected files:')
+    if verbose:
+        print('\nMatrix of distances between sequences in selected files:')
     _loop_over_all_sketch_files(data_path=data_path, bin_path=bin_path,
                                 mash_cmd='triangle', verbose=verbose, output_path=output_path)
-
-
-def main():
-    # TODO - remove this TESTING
-    analyze_all('test_outputs/')
-
-
-if __name__ == '__main__':
-    main()
