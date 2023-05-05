@@ -230,31 +230,17 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
 
     files = _get_files(data_path)
 
-    # TESTING - remove path loop later
     proc = subprocess.run([f'{bin_path}mash', 'sketch',
                            *files,
-                           '-o', f'sketches'
-                           ],
-                          capture_output=True)
+                           '-o', f'{output_path}/sketches'], capture_output=True)
 
     if _error_present(proc, 'sketch'):
         return
 
+    sketch_path = f'{output_path}/sketches.msh'
+
     if verbose:
         print(proc.stdout.decode())
-
-    pathlib.Path(output_path).mkdir(
-        parents=True, exist_ok=True)
-
-    # TODO use this to create sketches.msh in the appropriate folder
-    # move the *_sketches.msh files to a desired location (mash can only generate the sketch file to ./ ) --> TESTING (acually, it does do that)
-    sketch_path = ''
-
-    subprocess.run(
-        ['mv', f'sketches.msh',
-            f'{output_path}/sketches.msh'],
-        capture_output=not verbose)
-    sketch_path = f'{output_path}/sketches.msh'
 
     if verbose:
         print('\nMash sketches created!')
@@ -336,6 +322,7 @@ def triangle(bin_path: str, data_path: pathlib.Path, output_path: str = '.', ver
 
 
 def main():
+    # TODO - remove this TESTING
     analyze_all('test_outputs/')
 
 
