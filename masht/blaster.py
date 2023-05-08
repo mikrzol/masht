@@ -253,6 +253,7 @@ def query_biomart(output_dir: str, verbose: bool = False) -> dict:
 # only for testing
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
+    '''
     query_files = query_biomart(
         '/mnt/d/IGR_temp/new_blaster_test/', verbose=True)
 
@@ -267,17 +268,4 @@ if __name__ == '__main__':
 
     split_blast_res_by_gos(blast_file_path=blast_files, seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
                            go_file_path=go_file, output_dir='/mnt/d/IGR_temp/new_blaster_test/go_lists_results/')
-
-    '''
-    db_dir = blast_create_index(input_file='/mnt/d/IGR_temp/blaster_test/Hv_all_isoforms_sequence_mart_export.fasta',
-                                name='test', db_type='nucl', no_parse_seqids=False, verbose=True)
-
-    blast_files = blast_run(
-        input_path='/mnt/d/IGR_temp/blaster_test/inputs.txt', db='test', db_dir=db_dir, verbose=True)
-
-    go_file = go_mart_to_go_slim_lists(
-        go_file='/mnt/d/IGR_temp/blaster_test/Hv_all_isoforms_GO_mart_export.txt', output_dir='/mnt/d/IGR_temp/blaster_test')
-
-    split_blast_res_by_gos(blast_file_path='/mnt/d/IGR_temp/blaster_test/inputs_blast.txt', seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
-                           go_file_path=go_file, output_dir='/mnt/d/IGR_temp/go_lists/')
     '''
