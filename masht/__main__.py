@@ -17,6 +17,13 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
 
     # either change this to '' or add default val to --db_dir arg = '' (or None)
     db_dir = '.'
+
+    if args.download_biomart_files:
+        biomart_files = blaster.query_biomart(
+            output_dir=args.output_dir, verbose=args.verbose)
+        args.db_fasta = biomart_files['seqs']
+        args.go_slim_list = biomart_files['feats']
+
     if args.create_db:
         db_dir = blaster.blast_create_index(input_file=args.db_fasta, name=args.name,
                                             db_type=args.db_type or 'nucl', no_parse_seqids=args.no_parse_seqids, verbose=args.verbose)
@@ -172,6 +179,10 @@ def main():
 
     blaster_parser.add_argument(
         '-n', '--name', help='name of the BLAST database to create or use')
+
+    # BLASTER - QUERYING BIOMART FOR FEATS AND SEQS
+    blaster_parser.add_argument('-d', '--download_biomart_files', action='store_true',
+                                help='whether to fetch feature and sequences specified in data/*.xml files from BioMart.')
 
     # BLASTER - CREATING BLAST DATABASE
     blaster_parser.add_argument(

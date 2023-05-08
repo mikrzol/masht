@@ -137,6 +137,7 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
 
     blast_files = []
     for file in in_files:
+        print(f'BLASTing {file}...')
         proc = subprocess.run([blast_type, '-query', file, '-db', db, '-out', f'{file.stem}.blast', '-evalue', str(
             evalue), '-num_threads', str(num_threads), '-outfmt', outfmt], capture_output=True, cwd=pathlib.Path(db_dir))
 
@@ -172,8 +173,9 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
     parse_seqids = '-parse_seqids' if not no_parse_seqids else ''
 
     # run makeblastdb
+    # TESTING - removed -parse_seqs temporarily
     proc = subprocess.run(['makeblastdb', '-in', pathlib.Path(input_file), '-dbtype',
-                           db_type, '-title', name, '-out', f'{name}', parse_seqids], cwd=pathlib.Path(input_file).parent, capture_output=True)
+                           db_type, '-title', name, '-out', f'{name}', '-blastdb_version', '5'], cwd=pathlib.Path(input_file).parent, capture_output=True)
 
     if verbose:
         print(proc.stdout.decode(), end='')
@@ -205,7 +207,7 @@ def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
         parents=True, exist_ok=True)
 
     # read in go file
-    go_df = pd.read_csv(go_file)
+    go_df = pd.read_csv(go_file, sep='\t')
 
     # group by go slim terms (assuming last column is go slim term)
     grouped = go_df.groupby(go_df.columns[-1])
@@ -219,16 +221,54 @@ def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
     return go_slim_list
 
 
-def query_for_go_terms() -> None:
-    # TODO implement querying for latest GO plant terms file from GO server
-    pass
+def query_biomart(output_dir: str, verbose: bool = False) -> dict:
+    import urllib.request
+    import pathlib
+
+    if pathlib.Path('masht/data/biomart_feats_query.xml').is_file() and pathlib.Path('masht/data/biomart_seqs_query.xml').is_file():
+        files = {'biomart_feats': 'masht/data/biomart_feats_query.xml',
+                 'biomart_seqs': 'masht/data/biomart_seqs_query.xml'}
+
+        for name, f_path in files.items():
+            with open(f_path, 'r') as request:
+                request = request.read().replace(
+                    '\t', '').replace('\n', '').replace(' ', '%20')
+                if verbose:
+                    print(
+                        f'fetching {name} from BioMart. This can take a while...')
+                urllib.request.urlretrieve(
+                    f'https://plants.ensembl.org/biomart/martservice?query={request}', f"{output_dir}/{name}.txt")
+            '''
+            # clean the files
+            with open(f'{output_dir}/{name}.txt', 'r') as f_h:
+                cleaned_text = f_h.read().replace(',', '&')
+            '''
+
+    else:
+        print('Missing one or more data/*.xml files. Please ensure both biomart_feats_query.xml and data/biomart_seqs_query.xml are in the data/ directory.')
+
+    return dict(zip(['feats', 'seqs'], [f'{output_dir}/{name}.txt' for name in ['biomart_feats', 'biomart_seqs']]))
 
 
-'''
 # only for testing
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
+    query_files = query_biomart(
+        '/mnt/d/IGR_temp/new_blaster_test/', verbose=True)
 
+    db_dir = blast_create_index(input_file=query_files['seqs'],
+                                name='test', db_type='nucl', no_parse_seqids=True, verbose=True)
+
+    blast_files = blast_run(
+        input_path='/mnt/d/IGR_temp/blaster_test/inputs.txt', db='test', db_dir=db_dir, verbose=True)
+
+    go_file = go_mart_to_go_slim_lists(
+        go_file=query_files['feats'], output_dir='/mnt/d/IGR_temp/new_blaster_test')
+
+    split_blast_res_by_gos(blast_file_path=blast_files, seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
+                           go_file_path=go_file, output_dir='/mnt/d/IGR_temp/new_blaster_test/go_lists_results/')
+
+    '''
     db_dir = blast_create_index(input_file='/mnt/d/IGR_temp/blaster_test/Hv_all_isoforms_sequence_mart_export.fasta',
                                 name='test', db_type='nucl', no_parse_seqids=False, verbose=True)
 
@@ -240,4 +280,4 @@ if __name__ == '__main__':
 
     split_blast_res_by_gos(blast_file_path='/mnt/d/IGR_temp/blaster_test/inputs_blast.txt', seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
                            go_file_path=go_file, output_dir='/mnt/d/IGR_temp/go_lists/')
-'''
+    '''
