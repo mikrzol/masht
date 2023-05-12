@@ -185,12 +185,13 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
     return str(pathlib.Path(input_file).parent)  # blastdb location
 
 
-def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
+def go_mart_to_go_slim_lists(go_file: str, output_dir: str, n_jobs: int = 10) -> list[str]:
     """Split GO mart file to GO slim files in appropriate folders
 
     Args:
         go_file (str): path to GO mart file
         output_dir (str): path to output directory
+        n_jobs (int): number of jobs to perform in parallel (defaults to 10)
 
     Returns:
         list[str]: list of paths to GO slim lists
@@ -216,8 +217,8 @@ def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
 
     with Manager() as manager:
         go_slim_list = manager.list()
-        Parallel(n_jobs=10)(delayed(_mp_task)(name, group, output_dir, go_slim_list)
-                            for name, group in grouped)
+        Parallel(n_jobs=n_jobs)(delayed(_mp_task)(name, group, output_dir, go_slim_list)
+                                for name, group in grouped)
 
         return list(go_slim_list)
 

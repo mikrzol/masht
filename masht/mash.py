@@ -15,8 +15,7 @@ def _multiproc_task(args: list):
 
 
 def analyze_all(go_dir: str):
-    # TODO add a way to use only the .fasta files in subdirectories?
-    """Analyze all files in subdirecotories of go_dir (created with blaster.split_blast_res_by_gos). 
+    """Analyze all files in subdirectories of go_dir (created with blaster.split_blast_res_by_gos). 
 
     Args:
         go_dir (str): path to directory created with blaster.split_blast_res_by_gos
@@ -24,10 +23,11 @@ def analyze_all(go_dir: str):
     import multiprocessing
     from itertools import repeat
 
-    # get only subdirs of go_dir. Assumes all subdirs contain stuff to analyze!
-    subdirs = [f for f in pathlib.Path(go_dir).iterdir() if f.is_dir()]
+    # assuming (filtered) .fasta files are to be analyzed
+    subdirs = list(
+        set(f.parent for f in pathlib.Path(go_dir).rglob('*.fasta')))
 
-    # each process will analyze 5 subdirs (files)
+    # each process will analyze 5 subdirs
     step = 5
     starts = [x for x in range(0, len(subdirs), step)]
 

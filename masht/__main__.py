@@ -217,6 +217,9 @@ def main():
     blaster_parser.add_argument(
         '-gsl', '--go_slim_list', help='create GO slim lists from provided GO Mart file')
 
+    blaster_parser.add_argument(
+        '--n_jobs', default=10, help='number of jobs to perform in parallel for --go_slim_list')
+
     # SPLITTING FASTA FILE BY GOs AND BLAST RESULTS
     blaster_parser.add_argument(
         '-s', '--split', help='split FASTA file provided here by GOs and BLAST results')
