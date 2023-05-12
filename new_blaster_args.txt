@@ -1,0 +1,16 @@
+--download_biomart_files
+--create_db
+--no_parse_seqids
+--name
+test
+--blast
+--query
+/mnt/d/IGR_temp/blaster_test/inputs.txt
+--evalue
+1e-49
+--go_slim_list
+--output_dir
+/mnt/d/IGR_temp/newest_blaster_test/
+--split
+/mnt/d/IGR_temp/blaster_test/inputs.txt
+--verbose
