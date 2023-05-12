@@ -107,6 +107,7 @@ No installation is necessary - the package should work right away.
 
 |option|long name|description|
 |---|---|---|
+|`-a`|`--analyze_all`|analyze .fasta files from all subdirectories of a given directory containing results of splitting blast results by GOs (blaster --split results)|
 |`-b`|`--bounds`|calculate Mash error bounds of selected files|
 |`-d`|`--distance`|calculate mash distances between the first and all of the rest of selected files|
 |`-h`|`--help`|show help message|
@@ -259,6 +260,7 @@ test_outputs
 |---|---|---|
 |`-b`|`--blast`|perform BLAST searches on selected files|
 |`-cdb`|`--create_db`|create BLAST database from the -db_fasta FASTA file|
+|`-d`|`--download_biomart_files`|download GO Mart files from Ensembl Biomart based on data/*.xml queries|
 |`-dbt`|`--db_type`|type of the BLAST database to create (nucl or prot). Default: nucl.|
 |`-e`|`--evalue`|e-value threshold for BLAST search. Default: 10e-50|
 |`-gsl`|`--go_slim_list`|create GO slim lists from provided GO Mart file|
@@ -273,6 +275,7 @@ test_outputs
 ||`--db_fasta`|location of the FASTA file to use for creating BLAST database|
 ||`--go`|location of the folder with go_list subfolders created by --go_slim_list. Inferred automatically if `--go_slim_list is used`|
 ||`--in_blast_file`|location of the BLAST results file(s). Inferred automatically if `--blast` is used|
+||`--n_jobs`|number of jobs to run in parallel for `--go_slim_list`. Default: 10|
 ||`--no_parse_seqids`|DO NOT parse SeqIDs in FASTA file when creating BLAST database|
 ||`--num_threads`|number of threads to use for BLAST search. Default: 4|
 
