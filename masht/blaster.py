@@ -65,9 +65,6 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
         go_file_path, list) else list(map(pathlib.Path, go_file_path))
     seqs_files = _get_files(pathlib.Path(seqs_file_path))
 
-    print(
-        f'blast_files = {blast_files}, typeof blast_file_path = {type(blast_file_path)}')
-
     for go in go_files:
         # read in go file
         go_df = pd.read_csv(go)
@@ -189,7 +186,6 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
 
 
 def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
-    # TODO rewrite this to use multiprocessing
     """Split GO mart file to GO slim files in appropriate folders
 
     Args:
@@ -199,11 +195,17 @@ def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
     Returns:
         list[str]: list of paths to GO slim lists
     """
+    from multiprocessing import Manager
+    from joblib import Parallel, delayed
+
+    def _mp_task(name: str, group: pd.DataFrame, output_dir: str, go_slim_list):
+        group.to_csv(f'{output_dir}/go_csvs/{name}.csv', index=False)
+        go_slim_list.append(f'{output_dir}/go_csvs/{name}.csv')
 
     print(f'Creating GO slim lists from {go_file}...')
 
     # create output dir
-    pathlib.Path(f'{output_dir}/go_lists').mkdir(
+    pathlib.Path(f'{output_dir}/go_csvs').mkdir(
         parents=True, exist_ok=True)
 
     # read in go file
@@ -212,13 +214,12 @@ def go_mart_to_go_slim_lists(go_file: str, output_dir: str) -> list[str]:
     # group by go slim terms (assuming last column is go slim term)
     grouped = go_df.groupby(go_df.columns[-1])
 
-    # save to appropriate csv files
-    go_slim_list = []
-    for name, group in grouped:
-        group.to_csv(f'{output_dir}/go_lists/{name}.csv', index=False)
-        go_slim_list.append(f'{output_dir}/go_lists/{name}.csv')
+    with Manager() as manager:
+        go_slim_list = manager.list()
+        Parallel(n_jobs=10)(delayed(_mp_task)(name, group, output_dir, go_slim_list)
+                            for name, group in grouped)
 
-    return go_slim_list
+        return list(go_slim_list)
 
 
 def query_biomart(output_dir: str, verbose: bool = False) -> dict:
@@ -253,7 +254,7 @@ def query_biomart(output_dir: str, verbose: bool = False) -> dict:
 # only for testing
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
-    '''
+
     query_files = query_biomart(
         '/mnt/d/IGR_temp/new_blaster_test/', verbose=True)
 
@@ -268,4 +269,3 @@ if __name__ == '__main__':
 
     split_blast_res_by_gos(blast_file_path=blast_files, seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
                            go_file_path=go_file, output_dir='/mnt/d/IGR_temp/new_blaster_test/go_lists_results/')
-    '''
