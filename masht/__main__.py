@@ -19,42 +19,57 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
     db_dir = '.'
 
     if args.download_biomart_files:
-        biomart_files = blaster.query_biomart(
-            output_dir=args.output_dir, verbose=args.verbose)
-        args.db_fasta = biomart_files['seqs']
-        args.go_mart_feats = biomart_files['feats']
+        try:
+            biomart_files = blaster.query_biomart(
+                output_dir=args.output_dir, verbose=args.verbose)
+            args.db_fasta = biomart_files['seqs']
+            args.go_mart_feats = biomart_files['feats']
+        except:
+            return
 
     if args.create_db:
-        db_dir = blaster.blast_create_index(input_file=args.db_fasta, name=args.name,
-                                            db_type=args.db_type or 'nucl', no_parse_seqids=args.no_parse_seqids, verbose=args.verbose)
+        try:
+            db_dir = blaster.blast_create_index(input_file=args.db_fasta, name=args.name,
+                                                db_type=args.db_type or 'nucl', no_parse_seqids=args.no_parse_seqids, verbose=args.verbose)
+        except:
+            return
 
     blast_files = []
     if args.blast:
-        blast_files = blaster.blast_run(
-            input_path=args.query,
-            db=args.name,
-            db_dir=args.db_dir or db_dir,
-            evalue=float(args.evalue) or 1e-49,
-            num_threads=int(args.num_threads),
-            outfmt=args.outfmt or '6',
-            output_dir=args.output_dir,
-            verbose=args.verbose)
+        try:
+            blast_files = blaster.blast_run(
+                input_path=args.query,
+                db=args.name,
+                db_dir=args.db_dir or db_dir,
+                evalue=float(args.evalue) or 1e-49,
+                num_threads=int(args.num_threads),
+                outfmt=args.outfmt or '6',
+                output_dir=args.output_dir,
+                verbose=args.verbose)
+        except:
+            return
 
     go_files = []
     if args.go_slim_list:
-        go_files = blaster.go_mart_to_go_slim_lists(
-            go_file=args.go_mart_feats, output_dir=args.output_dir)
+        try:
+            go_files = blaster.go_mart_to_go_slim_lists(
+                go_file=args.go_mart_feats, output_dir=args.output_dir)
+        except:
+            return
 
     print(f'\n\ngo_files = {go_files}\n\n')
 
     if args.split:
-        blaster.split_blast_res_by_gos(
-            blast_file_path=blast_files or args.in_blast_file,
-            go_file_path=go_files or args.go,
-            seqs_file_path=args.split,
-            blast_outfmt=args.outfmt or 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore',
-            output_dir=args.output_dir,
-            verbose=args.verbose)
+        try:
+            blaster.split_blast_res_by_gos(
+                blast_file_path=blast_files or args.in_blast_file,
+                go_file_path=go_files or args.go,
+                seqs_file_path=args.split,
+                blast_outfmt=args.outfmt or 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore',
+                output_dir=args.output_dir,
+                verbose=args.verbose)
+        except:
+            return
 
 
 def perform_stats(args: argparse.ArgumentParser) -> None:
@@ -330,11 +345,13 @@ def main():
         if (bool(args.manova) or bool(args.anova)) ^ bool(args.groups_file):
             global_parser.error(
                 '--anova or --manova and --groups_file must be given together!')
+            return
 
     if args.subparser_name == 'blaster':
         if (not bool(args.download_biomart_files) and (bool(args.go_slim_list) ^ bool(args.go_mart_feats))):
             global_parser.error(
                 'either --download_biomart_files must be used or --go_slim_list and --go_mart_feats must be given together!')
+            return
 
     # VARIABLES
     # check if output dir exists and create one if necessary

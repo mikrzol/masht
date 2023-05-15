@@ -10,7 +10,7 @@ test
 1e-49
 --go_slim_list
 --output_dir
-/mnt/d/IGR_temp/newest_blaster_test/
+/mnt/d/IGR_temp/temp/
 --split
 /mnt/d/IGR_temp/blaster_test/inputs.txt
 --verbose
