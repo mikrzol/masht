@@ -167,7 +167,7 @@ def perform_mash(args: argparse.ArgumentParser) -> None:
         subprocess.run(args.mash.split())
 
     if args.analyze_all:
-        mash.analyze_all(go_dir=data_path)
+        mash.analyze_all(go_dir=data_path, verbose=args.verbose)
 
 
 def main():
@@ -201,7 +201,7 @@ def main():
 
     # BLASTER - CREATING BLAST DATABASE
     blaster_parser.add_argument(
-        '-cdb', '--create_db', action='store_true', help='create BLAST database from the -db_fasta FASTA file')
+        '-cdb', '--create_db', action='store_true', help='create BLAST database from the --db_fasta FASTA file')
 
     blaster_parser.add_argument(
         '-dbt', '--db_type', help='type of the BLAST database to create (nucl or prot). Default: nucl')

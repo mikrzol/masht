@@ -2,37 +2,32 @@ import subprocess
 import pathlib
 
 
-def _multiproc_task(args: list):
+def _multiproc_task(subdirs: list[pathlib.Path]):
     # TODO add subsequent steps of analysis to this task (from stats package)
-    start = args[0]
-    step = args[1]
-    arr = args[2]
-    for x in range(start, start+step):
-        if x < len(arr):
-            sketch_path = sketch('bin/', data_path=arr[x], output_path=arr[x])
-            triangle('bin/', data_path=pathlib.Path(sketch_path),
-                     output_path=arr[x])
+    sketch_path = sketch('bin/', data_path=subdirs,
+                         output_path=subdirs, verbose=verb)
+    triangle('bin/', data_path=pathlib.Path(sketch_path),
+             output_path=subdirs, verbose=verb)
 
 
-def analyze_all(go_dir: str):
+def analyze_all(go_dir: str, verbose: bool = False):
     """Analyze all files in subdirectories of go_dir (created with blaster.split_blast_res_by_gos). 
 
     Args:
         go_dir (str): path to directory created with blaster.split_blast_res_by_gos
     """
     import multiprocessing
-    from itertools import repeat
 
     # assuming (filtered) .fasta files are to be analyzed
     subdirs = list(
         set(f.parent for f in pathlib.Path(go_dir).rglob('*.fasta')))
 
-    # each process will analyze 5 subdirs
-    step = 5
-    starts = [x for x in range(0, len(subdirs), step)]
+    # workaround for passing verbose to _multiproc_task
+    global verb
+    verb = verbose
 
     with multiprocessing.Pool() as pool:
-        pool.map(_multiproc_task, zip(starts, repeat(step), repeat(subdirs)))
+        pool.map(_multiproc_task, subdirs)
 
 
 def _error_present(proc: subprocess.CompletedProcess, masht_subcommand: str) -> bool:
@@ -222,6 +217,7 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
         print('\nCreating mash sketches...')
 
     files = _get_files(data_path)
+    # TODO could add filtering files to have only .fasta or .fa files
 
     proc = subprocess.run([f'{bin_path}mash', 'sketch',
                            *files,
