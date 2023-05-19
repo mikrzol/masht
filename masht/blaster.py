@@ -99,10 +99,15 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
             idx = [x.stem for x in seqs_files].index(blast_file.stem)
             seq_file = _read_fasta(seqs_files[idx])
 
+            # TODO this sometimes generates empty files - need to stop it then
+
+            # get unique qseqids
+            ids = filtered_df['qseqid'].unique()
+            if not ids:
+                continue
+
             # write the corresponding sequences from seq_file to output file
             with open(f'{output_dir}/{go.stem}/filtered_{blast_file.stem}.fasta', 'w') as output_file:
-                # get unique qseqids
-                ids = filtered_df['qseqid'].unique()
                 for id in ids:
                     output_file.write(">{0}\n{1}".format(
                         id, '\n'.join(seq_file[id])))
@@ -131,6 +136,8 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
 
     # assuming all inputs are in the input_path folder
     in_files = _get_files(pathlib.Path(input_path))
+
+    # TODO this can be multiprocessed
 
     blast_files = []
     for file in in_files:
