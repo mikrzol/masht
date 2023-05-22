@@ -43,7 +43,7 @@ def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
     return fasta_dict
 
 
-def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: str, go_file_path: str or list[str], blast_outfmt: str = 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore', output_dir: str = '.', verbose: bool = 'False') -> None:
+def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str, go_file_path: str or list[str], blast_outfmt: str = 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore', output_dir: str = '.', verbose: bool = 'False') -> None:
     """Split sequences from seqs_file based on go_file and blast_file. Puts resulting files in appropriate folders based on gene ontologies from the go_file.
 
         Args:
@@ -103,7 +103,7 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
 
             # get unique qseqids
             ids = filtered_df['qseqid'].unique()
-            if not ids:
+            if ids.size == 0:
                 continue
 
             # write the corresponding sequences from seq_file to output file
@@ -113,7 +113,7 @@ def split_blast_res_by_gos(blast_file_path: str or list[str], seqs_file_path: st
                         id, '\n'.join(seq_file[id])))
 
 
-def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'blastn', evalue: float = 10e-50, num_threads: int = 4, outfmt: str = '6', output_dir: str = '.', verbose: bool = False) -> list[str]:
+def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'blastn', evalue: float = 10e-50, num_threads: int = 4, outfmt: str = '6', output_dir: str = '.', verbose: bool = False, n_jobs: int = -1) -> list[str]:
     """Run blast on a fasta file
 
     Args:
@@ -131,17 +131,9 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
         list[str]: list of paths to blast output files
     """
 
-    if verbose:
-        print('Running blast...')
-
-    # assuming all inputs are in the input_path folder
-    in_files = _get_files(pathlib.Path(input_path))
-
-    # TODO this can be multiprocessed
-
-    blast_files = []
-    for file in in_files:
-        print(f'BLASTing {file}...')
+    def _mp_blast_task(blast_files, file: pathlib.Path):
+        if verbose:
+            print(f'BLASTing {file}...')
         proc = subprocess.run([blast_type, '-query', file, '-db', db, '-out', f'{file.stem}.blast', '-evalue', str(
             evalue), '-num_threads', str(num_threads), '-outfmt', outfmt], capture_output=True, cwd=pathlib.Path(db_dir))
 
@@ -150,10 +142,43 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
 
         if verbose:
             print(proc.stdout.decode(), end='')
-
         blast_files.append(f'{db_dir}/{file.stem}.blast')
 
-    return blast_files
+    if verbose:
+        print('Running blast...')
+
+    # assuming all inputs are in the input_path folder
+    in_files = _get_files(pathlib.Path(input_path))
+
+    # TODO this can be multiprocessed
+
+    from multiprocessing import Manager
+    from joblib import Parallel, delayed
+
+    with Manager() as manager:
+        blast_files = manager.list()
+
+        Parallel(n_jobs=n_jobs)(delayed(_mp_blast_task)(blast_files, file)
+                                for file in in_files)
+
+        return list(blast_files)
+
+        '''
+        for file in in_files:
+            print(f'BLASTing {file}...')
+            proc = subprocess.run([blast_type, '-query', file, '-db', db, '-out', f'{file.stem}.blast', '-evalue', str(
+                evalue), '-num_threads', str(num_threads), '-outfmt', outfmt], capture_output=True, cwd=pathlib.Path(db_dir))
+
+            if _error_present(proc, 'blast'):
+                return
+
+            if verbose:
+                print(proc.stdout.decode(), end='')
+
+            blast_files.append(f'{db_dir}/{file.stem}.blast')
+
+        return blast_files
+        '''
 
 
 def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_parse_seqids: bool = False, verbose: bool = False) -> str:
@@ -192,7 +217,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
     return str(pathlib.Path(input_file).parent)  # blastdb location
 
 
-def go_mart_to_go_slim_lists(go_file: str, output_dir: str, n_jobs: int = 10) -> list[str]:
+def go_mart_to_go_csvs(go_file: str, output_dir: str, n_jobs: int = 10) -> list[str]:
     """Split GO mart file to GO slim files in appropriate folders
 
     Args:
@@ -263,6 +288,7 @@ def query_biomart(output_dir: str, verbose: bool = False) -> dict:
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
 
+    '''
     query_files = query_biomart(
         '/mnt/d/IGR_temp/new_blaster_test/', verbose=True)
 
@@ -274,6 +300,9 @@ if __name__ == '__main__':
 
     go_file = go_mart_to_go_slim_lists(
         go_file=query_files['feats'], output_dir='/mnt/d/IGR_temp/new_blaster_test')
+    '''
 
-    split_blast_res_by_gos(blast_file_path=blast_files, seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
-                           go_file_path=go_file, output_dir='/mnt/d/IGR_temp/new_blaster_test/go_lists_results/')
+    split_blast_to_fastas(blast_file_path='/mnt/d/IGR_temp/inputs_blast.txt',
+                          seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
+                          go_file_path='/mnt/d/IGR_temp/new_blaster_test/go_csvs',
+                          output_dir='/mnt/d/IGR_temp/newer_blaster_test')

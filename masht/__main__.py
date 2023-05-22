@@ -52,16 +52,14 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
     go_files = []
     if args.go_slim_list:
         try:
-            go_files = blaster.go_mart_to_go_slim_lists(
+            go_files = blaster.go_mart_to_go_csvs(
                 go_file=args.go_mart_feats, output_dir=args.output_dir)
         except:
             return
 
-    print(f'\n\ngo_files = {go_files}\n\n')
-
     if args.split:
         try:
-            blaster.split_blast_res_by_gos(
+            blaster.split_blast_to_fastas(
                 blast_file_path=blast_files or args.in_blast_file,
                 go_file_path=go_files or args.go,
                 seqs_file_path=args.split,
