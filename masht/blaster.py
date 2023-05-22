@@ -277,14 +277,19 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
 
             # get unique qseqids
             ids = filtered_df['qseqid'].unique()
+            ''' why doesn't this work? it causes the eagle server to finish abruptly
             if ids.size == 0:
                 continue
+            '''
 
             # write the corresponding sequences from seq_file to output file
             with open(f'{output_dir}/{go.stem}/filtered_{blast_file.stem}.fasta', 'w') as output_file:
                 for id in ids:
                     output_file.write(">{0}\n{1}".format(
                         id, '\n'.join(seq_file[id])))
+
+    # workaround for handling empty files cause continue causes loop to finish prematurely
+    subprocess.run(['find', output_dir, '-type', 'f', '-empty', '-delete'])
 
 
 # only for testing
