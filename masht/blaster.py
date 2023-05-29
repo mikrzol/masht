@@ -2,6 +2,7 @@ from mash import _get_files, _error_present
 import subprocess
 import pathlib
 import pandas as pd
+import urllib.request
 
 
 def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
@@ -43,30 +44,35 @@ def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
     return fasta_dict
 
 
+def _mp_download(args):
+    name, f_path = args[0]
+    verbose = args[1]
+    output_dir = args[2]
+
+    with open(f_path, 'r') as request:
+        request = request.read().replace(
+            '\t', '').replace('\n', '').replace(' ', '%20')
+        if verbose:
+            print(
+                f'fetching {name} from BioMart. This can take a while...')
+        urllib.request.urlretrieve(
+            f'https://plants.ensembl.org/biomart/martservice?query={request}', f"{output_dir}/{name}.txt")
+
+
 def query_biomart(output_dir: str, verbose: bool = False) -> dict:
-    import urllib.request
     import pathlib
+    import multiprocessing
+    from itertools import repeat
 
     if pathlib.Path('masht/data/biomart_feats_query.xml').is_file() and pathlib.Path('masht/data/biomart_seqs_query.xml').is_file():
-        # TODO make this download in parallel
-
         files = {'biomart_feats': 'masht/data/biomart_feats_query.xml',
                  'biomart_seqs': 'masht/data/biomart_seqs_query.xml'}
 
-        for name, f_path in files.items():
-            with open(f_path, 'r') as request:
-                request = request.read().replace(
-                    '\t', '').replace('\n', '').replace(' ', '%20')
-                if verbose:
-                    print(
-                        f'fetching {name} from BioMart. This can take a while...')
-                urllib.request.urlretrieve(
-                    f'https://plants.ensembl.org/biomart/martservice?query={request}', f"{output_dir}/{name}.txt")
-            '''
-            # clean the files
-            with open(f'{output_dir}/{name}.txt', 'r') as f_h:
-                cleaned_text = f_h.read().replace(',', '&')
-            '''
+        with multiprocessing.Pool() as pool:
+            lst = list(files.items())
+            args = list(zip(
+                lst, repeat(verbose), repeat(output_dir)))
+            pool.map(_mp_download, args)
 
     else:
         print('Missing one or more data/*.xml files. Please ensure both biomart_feats_query.xml and data/biomart_seqs_query.xml are in the data/ directory.')
@@ -295,24 +301,25 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
 # only for testing
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
+    '''
+
+    query_files = query_biomart(
+        '/mnt/e/IGR_temp/download_test/', verbose=True)
 
     blast_files = blast_run(
-        input_path='/mnt/d/IGR_temp/blaster_test/inputs.txt', db='test', db_dir='/mnt/d/IGR_temp/new_blaster_test', verbose=True)
+        input_path='/mnt/e/IGR_temp/blaster_test/inputs.txt', db='test', db_dir='/mnt/e/IGR_temp/new_blaster_test', verbose=True)
 
-    '''
-    query_files = query_biomart(
-        '/mnt/d/IGR_temp/new_blaster_test/', verbose=True)
 
     db_dir = blast_create_index(input_file=query_files['seqs'],
                                 name='test', db_type='nucl', no_parse_seqids=True, verbose=True)
 
-    
+
 
     go_file = go_mart_to_go_slim_lists(
-        go_file=query_files['feats'], output_dir='/mnt/d/IGR_temp/new_blaster_test')
+        go_file=query_files['feats'], output_dir='/mnt/e/IGR_temp/new_blaster_test')
 
-    split_blast_to_fastas(blast_file_path='/mnt/d/IGR_temp/inputs_blast.txt',
-                          seqs_file_path='/mnt/d/IGR_temp/blaster_test/inputs.txt',
-                          go_file_path='/mnt/d/IGR_temp/new_blaster_test/go_csvs',
-                          output_dir='/mnt/d/IGR_temp/newer_blaster_test')
+    split_blast_to_fastas(blast_file_path='/mnt/e/IGR_temp/inputs_blast.txt',
+                          seqs_file_path='/mnt/e/IGR_temp/blaster_test/inputs.txt',
+                          go_file_path='/mnt/e/IGR_temp/new_blaster_test/go_csvs',
+                          output_dir='/mnt/e/IGR_temp/newer_blaster_test')
     '''
