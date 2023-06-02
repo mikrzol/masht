@@ -153,8 +153,6 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
     # assuming all inputs are in the input_path folder
     in_files = _get_files(pathlib.Path(input_path))
 
-    # TODO this can be multiprocessed
-
     from multiprocessing import Manager
     from joblib import Parallel, delayed
 
@@ -233,7 +231,7 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
             output_dir (str, optional): path to output directory. Defaults to '.'.
             verbose (bool, optional): whether to increase verbosity. Defaults to 'False'.
     """
-    # TODO make this multiprocessed
+    from joblib import Parallel, delayed
 
     if verbose:
         print('Splitting blast results by GOs...\n')
@@ -245,19 +243,19 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
         go_file_path, list) else list(map(pathlib.Path, go_file_path))
     seqs_files = _get_files(pathlib.Path(seqs_file_path))
 
-    for go in go_files:
+    def _mp_split(seqs_files: list[pathlib.Path], go_file: pathlib.Path, blast_files: list[pathlib.Path]):
         # read in go file
-        go_df = pd.read_csv(go)
+        go_df = pd.read_csv(go_file)
 
         # create tun
         tun = (go_df['Gene stable ID'] + '|' +
                go_df['Transcript stable ID']).unique()
 
         if verbose:
-            print(f'Splitting {go.stem} file with {len(tun)} IDs...')
+            print(f'Splitting {go_file.stem} file with {len(tun)} IDs...')
 
         # create output dir
-        pathlib.Path(f'{output_dir}/{go.stem}').mkdir(
+        pathlib.Path(f'{output_dir}/{go_file.stem}').mkdir(
             parents=True, exist_ok=True)
 
         for blast_file in blast_files:
@@ -283,16 +281,19 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
 
             # get unique qseqids
             ids = filtered_df['qseqid'].unique()
-            ''' why doesn't this work? it causes the eagle server to finish abruptly
+            """ why doesn't this work? it causes the eagle server to finish abruptly
             if ids.size == 0:
                 continue
-            '''
+            """
 
             # write the corresponding sequences from seq_file to output file
-            with open(f'{output_dir}/{go.stem}/filtered_{blast_file.stem}.fasta', 'w') as output_file:
+            with open(f'{output_dir}/{go_file.stem}/filtered_{blast_file.stem}.fasta', 'w') as output_file:
                 for id in ids:
                     output_file.write(">{0}\n{1}".format(
                         id, '\n'.join(seq_file[id])))
+
+    Parallel(n_jobs=-1)(delayed(_mp_split)(seqs_files=seqs_files, go_file=go_file, blast_files=blast_files)
+                        for go_file in go_files)
 
     # workaround for handling empty files cause continue causes loop to finish prematurely
     subprocess.run(['find', output_dir, '-type', 'f', '-empty', '-delete'])
@@ -318,8 +319,8 @@ if __name__ == '__main__':
     go_file = go_mart_to_go_slim_lists(
         go_file=query_files['feats'], output_dir='/mnt/e/IGR_temp/new_blaster_test')
 
-    split_blast_to_fastas(blast_file_path='/mnt/e/IGR_temp/inputs_blast.txt',
+    split_blast_to_fastas(blast_file_path='/mnt/e/IGR_temp/blaster_test/inputs_blast.txt',
                           seqs_file_path='/mnt/e/IGR_temp/blaster_test/inputs.txt',
-                          go_file_path='/mnt/e/IGR_temp/new_blaster_test/go_csvs',
-                          output_dir='/mnt/e/IGR_temp/newer_blaster_test')
+                          go_file_path='/mnt/e/IGR_temp/blaster_test/go_lists',
+                          output_dir='/mnt/e/IGR_temp/split_test')
     '''
