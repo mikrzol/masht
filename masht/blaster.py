@@ -272,8 +272,6 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
             idx = [x.stem for x in seqs_files].index(blast_file.stem)
             seq_file = _read_fasta(seqs_files[idx])
 
-            # TODO this sometimes generates empty files - need to stop it then
-
             # get unique qseqids
             ids = filtered_df['qseqid'].unique()
             """ why doesn't this work? it causes the eagle server to finish abruptly

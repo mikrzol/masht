@@ -92,6 +92,19 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
 
     args.ss_type = int(args.ss_type)
 
+    if args.analyze_all:
+        stats.analyze_all(data_path=data_path,
+                          mode=args.mode,
+                          groups_file=args.groups_file,
+                          output_dir=pathlib.Path(args.output_dir),
+                          anova_manova_mode=args.anova_manova_mode,
+                          pcs=args.pc_number,
+                          verbose=args.verbose,
+                          ss_type=args.ss_type,
+                          triangle=args.not_triangle,
+                          n_dim=args.n_dimensions)
+        return
+
     pcoa_path = ''
     if args.pcoa:
         pcoa_path = stats.pcoa(data_path=data_path, output_dir=args.output_dir, n_dim=args.n_dimensions,
@@ -101,11 +114,11 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
 
     if args.anova:
         stats.anova(data_path=pcoa_path or data_path, groups_file=args.groups_file,
-                    mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, ss_type=args.ss_type, triangle=args.not_triangle, verbose=args.verbose)
+                    anova_manova_mode=args.anova_manova_mode, output_dir=args.output_dir, pcs=args.pc_number, ss_type=args.ss_type, triangle=args.not_triangle, verbose=args.verbose)
 
     if args.manova:
         stats.manova(data_path=pcoa_path or data_path,
-                     groups_file=args.groups_file, mode=args.mode, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
+                     groups_file=args.groups_file, anova_manova_mode=args.anova_manova_mode, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
 
 
 def perform_mash(args: argparse.ArgumentParser) -> None:
@@ -263,14 +276,18 @@ def main():
                                (names are relative to package location)')
     stats_parser.add_argument(
         '-a', '--anova', action='store_true', help='perfom ANOVA on selected files')
+    stats_parser.add_argument('--analyze_all', action='store_true',
+                              help='perform full analysis on all files in the data directory and subdirectories')
+    stats_parser.add_argument(
+        '-amm', '--anova_manova_mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats. Defaults to \'n\'')
     stats_parser.add_argument(
         '-d', '--draw_plot', nargs=2, help='draw PCoA plot for chosen PCs. Two intigers required.')
     stats_parser.add_argument(
         '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA or MANOVA. Required if -a or -ma was selected')
     stats_parser.add_argument('-ma', '--manova', action='store_true',
                               help='perfom MANOVA analysis on selected files')
-    stats_parser.add_argument(
-        '-mo', '--mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats. Defaults to \'n\'')
+    stats_parser.add_argument('-m', '--mode', choices=[
+                              'anova', 'manova'], help='select which model to use for analysis when `--analyze_all` was chosen.')
     stats_parser.add_argument('-n', '--n_dimensions', default=None,
                               help='number of target dimensions for PCoA analysis')
     stats_parser.add_argument('-nt', '--not_triangle', action='store_false',
@@ -340,9 +357,9 @@ def main():
 
     args = global_parser.parse_args()
     if args.subparser_name == 'stats':
-        if (bool(args.manova) or bool(args.anova)) ^ bool(args.groups_file):
+        if (bool(args.manova) or bool(args.anova) or bool(args.analyze_all)) ^ bool(args.groups_file):
             global_parser.error(
-                '--anova or --manova and --groups_file must be given together!')
+                '--anova or --manova or --analyze_all and --groups_file must be given together!')
             return
 
     if args.subparser_name == 'blaster':

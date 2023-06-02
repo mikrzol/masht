@@ -3,14 +3,57 @@ from mash import _get_files
 import pandas as pd
 
 
-def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
+def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False, plot: list[str] = ['1', '2'], ss_type: int = 2, triangle: bool = True, n_dim: int or None = None) -> None:
+    """Perform standardized full analysis of all files in the data_path directory
+
+    Args:
+        data_path (pathlib.Path): location of directory with subdirs with triangle (.tsv) files from mash.analyze_all
+        mode (str): _description_
+        groups_file (str): _description_
+        output_dir (pathlib.Path): _description_
+        anova_manova_mode (str, optional): _description_. Defaults to 'n'.
+        pcs (int, optional): _description_. Defaults to 4.
+        verbose (bool, optional): _description_. Defaults to False.
+        plot (list[str], optional): _description_. Defaults to ['1', '2'].
+        ss_type (int, optional): _description_. Defaults to 2.
+        triangle (bool, optional): _description_. Defaults to True.
+        n_dim (intorNone, optional): _description_. Defaults to None.
+    """
+
+    from joblib import Parallel, delayed
+
+    def _mp_analyze(file: pathlib.Path):
+
+        pcoa_path = pathlib.Path(pcoa(data_path=file, output_dir=file.parent,
+                                 n_dim=n_dim, plot=plot, triangle=triangle, verbose=verbose))
+
+        '''
+
+        if mode == 'anova':
+            anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent,
+                  anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=verbose)
+        else:
+            manova(data_path=pcoa_path, groups_file=groups_file,
+                   output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=verbose)
+        '''
+
+    subdirs = list(
+        set(f for f in pathlib.Path(data_path).rglob('*sketches_triangle.tsv')))
+
+    Parallel(n_jobs=-1)(delayed(_mp_analyze)(subdir)
+                        for subdir in subdirs)
+
+    pass
+
+
+def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
     """perform MANOVA analyses of selected files
 
     Args:
         data_path (pathlib.Path): location of the input file (with PCoA coordinates). Automatically inferred if pcoa step was performed in the same command. 
         groups_file (str): location of the file with group descriptions. The first column of this file should contain names 
         output_dir (pathlib.Path): output directory location
-        mode (str, optional): How many parameters from the groups_file to consider. Defaults to 'n', which means to consider all of them.
+        anova_manova_mode (str, optional): How many parameters from the groups_file to consider. Defaults to 'n', which means to consider all of them.
         pcs (int, optional): how many PCs to consider. Defaults to 4.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
     """
@@ -45,10 +88,10 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         manova = pd.merge(groups, df, left_index=True, right_index=True)
 
         # get number of params to consider
-        if mode.isnumeric():
-            mode = int(mode)
+        if anova_manova_mode.isnumeric():
+            anova_manova_mode = int(anova_manova_mode)
         else:
-            mode = len(groups.columns)
+            anova_manova_mode = len(groups.columns)
 
         # convert Pandas df to R df
         with (ro.default_converter + pandas2ri.converter).context():
@@ -57,7 +100,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         # create formula and create model
         from rpy2.robjects import Formula
         formula = Formula(
-            f'cbind({",".join(df.columns[0:pcs])}) ~ {" * ".join(groups.columns[:mode])}')
+            f'cbind({",".join(df.columns[0:pcs])}) ~ {" * ".join(groups.columns[:anova_manova_mode])}')
         man = stats.manova(formula=formula, data=m_df)
 
         # convert results to Pandas df
@@ -73,7 +116,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
 
         # save results to file
         big_df.to_csv(
-            f'{output_dir}/manova_{pcs}_PCs_{mode}_params.tsv', sep='\t')
+            f'{output_dir}/manova_{pcs}_PCs_{anova_manova_mode}_params.tsv', sep='\t')
 
         # report results if verbose
         if verbose:
@@ -84,7 +127,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         from statsmodels.multivariate.manova import MANOVA
 
         # create formula and create model
-        formula = f'{" + ".join(df.columns[0:pcs])} ~ {" * ".join(groups.columns[:mode])}'
+        formula = f'{" + ".join(df.columns[0:pcs])} ~ {" * ".join(groups.columns[:anova_manova_mode])}'
         fit = MANOVA.from_formula(formula, data=manova)
 
         # report results and save them to file
@@ -93,18 +136,18 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
             print(fit.mv_test().summary_frame)
 
         fit.mv_test().summary_frame.to_csv(
-            f'{output_dir}/manova_{pcs}_PCs_{mode}_params.tsv', sep='\t')
+            f'{output_dir}/manova_{pcs}_PCs_{anova_manova_mode}_params.tsv', sep='\t')
     '''
 
 
-def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
+def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
     """perform ANOVA (either with repeats or n-way) on data in data_path file
 
     Args:
         data_path (pathlib.Path): location of the input file (with PCoA coordinates). Automatically inferred if pcoa step was performed in the same command.
         groups_file (str): location of the file with group descriptions. The first column of this file should contain names 
         output_dir (pathlib.Path): output directory location
-        mode (str, optional): which type of ANOVA to perform. Use 'repeat' for repeated ANOVA, int to perform n-way ANOVA or leave as default to perform ANOVA on all parameters in the groups_file. Defaults to 'n' (for all parameters).
+        anova_manova_mode (str, optional): which type of ANOVA to perform. Use 'repeat' for repeated ANOVA, int to perform n-way ANOVA or leave as default to perform ANOVA on all parameters in the groups_file. Defaults to 'n' (for all parameters).
         pcs (int, optional): number of PCs to perform ANOVA analyses on. Defaults to 4.
         ss_type (int, optional): the type of sum of squares to use (ANOVA-specific). Implemented in statsmodels.anova_lm. Defaults to 2.
         triangle (bool, optional): (not used) whether input is in the form of a triangle. Defaults to True.
@@ -116,7 +159,7 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, m
         df = pd.read_csv(file, sep='\t', index_col=0)
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
-        if mode == 'repeat':
+        if anova_manova_mode == 'repeat':
             from statsmodels.stats.anova import AnovaRM
 
             # get dataframe
@@ -146,7 +189,8 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, m
             from statsmodels.formula.api import ols
 
             # get number of parameters to perform ANOVA on
-            n = int(mode) if mode.isnumeric() else len(groups.columns)
+            n = int(anova_manova_mode) if anova_manova_mode.isnumeric() else len(
+                groups.columns)
 
             # select columns
             groups_selected = groups.iloc[:, :n]
@@ -208,7 +252,9 @@ def plot_pcoa(res, names: list[str], output_dir: pathlib.Path, chosen_pcs: list[
     import matplotlib.pyplot as plt
     chosen_pcs = ['PC' + pc for pc in chosen_pcs]
 
-    plt.plot(res.samples[chosen_pcs[0]], res.samples[chosen_pcs[1]], 'o')
+    plt.figure(figsize=(10, 8), dpi=200)
+    plt.plot(res.samples[chosen_pcs[0]],
+             res.samples[chosen_pcs[1]], 'o')
     plt.grid(color='lightgrey')
     for name, (i, pc) in zip(names, res.samples[chosen_pcs].iterrows()):
         plt.annotate(name, pc, xytext=(10, -5),
@@ -263,6 +309,7 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
 
     last_result = ''  # location of file to perform ANOVA later if chosen
     files = _get_files(data_path)
+
     for file in files:
         if triangle:
             df = pd.read_csv(file, sep='\t')
