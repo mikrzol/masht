@@ -44,7 +44,12 @@ def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
     return fasta_dict
 
 
-def _mp_download(args):
+def _mp_download(args) -> None:
+    """Multiprocessing task for downloading BioMart files
+
+    Args:
+        args (_type_): list of arguments for the task: [(tuple with name and file location), verbosity, output_dir]
+    """
     name, f_path = args[0]
     verbose = args[1]
     output_dir = args[2]
@@ -60,6 +65,14 @@ def _mp_download(args):
 
 
 def query_biomart(output_dir: str, verbose: bool = False) -> dict:
+    """Download feats and seqs files from BioMart based on .xml files in the masht/data dir  
+    Args:
+        output_dir (str): location of the output directory
+        verbose (bool, optional): whether to increase verbosity. Defaults to False.
+
+    Returns:
+        dict: dictionary with {key = name: val = file location} for downloaded files
+    """
     import pathlib
     import multiprocessing
     from itertools import repeat
@@ -81,7 +94,6 @@ def query_biomart(output_dir: str, verbose: bool = False) -> dict:
 
 
 def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_parse_seqids: bool = False, verbose: bool = False) -> str:
-    # generate docs for this function
     """Create blast index
 
     Args:
@@ -163,23 +175,6 @@ def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'bl
                                 for file in in_files)
 
         return list(blast_files)
-
-        '''
-        for file in in_files:
-            print(f'BLASTing {file}...')
-            proc = subprocess.run([blast_type, '-query', file, '-db', db, '-out', f'{file.stem}.blast', '-evalue', str(
-                evalue), '-num_threads', str(num_threads), '-outfmt', outfmt], capture_output=True, cwd=pathlib.Path(db_dir))
-
-            if _error_present(proc, 'blast'):
-                return
-
-            if verbose:
-                print(proc.stdout.decode(), end='')
-
-            blast_files.append(f'{db_dir}/{file.stem}.blast')
-
-        return blast_files
-        '''
 
 
 def go_mart_to_go_csvs(go_file: str, output_dir: str, n_jobs: int = 10) -> list[str]:
@@ -292,6 +287,7 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
                     output_file.write(">{0}\n{1}".format(
                         id, '\n'.join(seq_file[id])))
 
+    # run in parallel
     Parallel(n_jobs=-1)(delayed(_mp_split)(seqs_files=seqs_files, go_file=go_file, blast_files=blast_files)
                         for go_file in go_files)
 
