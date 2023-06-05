@@ -5,6 +5,44 @@ import pandas as pd
 import urllib.request
 
 
+def analyze_all(args):
+    from datetime import date
+    today = date.today().strftime("%d_%m_%Y")
+
+    if args.download_biomart_files:
+        query_files = query_biomart(
+            output_dir=args.output_dir,
+            verbose=args.verbose)
+
+    db_dir = blast_create_index(
+        input_file=args.db_fasta or query_files['seqs'],
+        name=f'{today}_BLAST_DB',
+        db_type=args.db_type or 'nucl',
+        no_parse_seqids=args.no_parse_seqids,
+        verbose=args.verbose)
+
+    blast_files = blast_run(
+        input_path=args.query,
+        db=f'{today}_BLAST_DB',
+        db_dir=args.db_dir or db_dir,
+        evalue=float(args.evalue),
+        num_threads=int(args.num_threads),
+        outfmt=args.outfmt or '6',
+        output_dir=args.output_dir,
+        verbose=args.verbose)
+
+    go_file = go_mart_to_go_csvs(
+        go_file=args.go_mart_feats or query_files['feats'],
+        output_dir=args.output_dir,
+        n_jobs=int(args.n_jobs))
+
+    split_blast_to_fastas(
+        blast_file_path=blast_files,
+        seqs_file_path=args.query,
+        go_file_path=go_file,
+        output_dir=args.output_dir+'/results')
+
+
 def _read_fasta(fasta_file_path: str, prep: bool = False) -> dict[str, str]:
     """Read in fasta file and return a dict with the header as key and the sequence as value
 
@@ -114,6 +152,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
 
     # run makeblastdb
     # TESTING - removed -parse_seqs temporarily
+    # TODO remove cwd to parent
     proc = subprocess.run(['makeblastdb', '-in', pathlib.Path(input_file), '-dbtype',
                            db_type, '-title', name, '-out', f'{name}', '-blastdb_version', '5'], cwd=pathlib.Path(input_file).parent, capture_output=True)
 
@@ -195,7 +234,7 @@ def go_mart_to_go_csvs(go_file: str, output_dir: str, n_jobs: int = 10) -> list[
         group.to_csv(f'{output_dir}/go_csvs/{name}.csv', index=False)
         go_slim_list.append(f'{output_dir}/go_csvs/{name}.csv')
 
-    print(f'Creating GO slim lists from {go_file}...')
+    print(f'\nCreating GO slim lists from {go_file}...')
 
     # create output dir
     pathlib.Path(f'{output_dir}/go_csvs').mkdir(
@@ -237,6 +276,8 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
     go_files = _get_files(pathlib.Path(go_file_path)) if not isinstance(
         go_file_path, list) else list(map(pathlib.Path, go_file_path))
     seqs_files = _get_files(pathlib.Path(seqs_file_path))
+
+    print(f'blast_files = {blast_files}')
 
     def _mp_split(seqs_files: list[pathlib.Path], go_file: pathlib.Path, blast_files: list[pathlib.Path]):
         # read in go file
@@ -297,24 +338,21 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
 # change from mash import to from masht.mash import to be able to run this part
 if __name__ == '__main__':
     '''
-
     query_files = query_biomart(
         '/mnt/e/IGR_temp/download_test/', verbose=True)
 
     blast_files = blast_run(
         input_path='/mnt/e/IGR_temp/blaster_test/inputs.txt', db='test', db_dir='/mnt/e/IGR_temp/new_blaster_test', verbose=True)
 
-
     db_dir = blast_create_index(input_file=query_files['seqs'],
                                 name='test', db_type='nucl', no_parse_seqids=True, verbose=True)
 
-
-
     go_file = go_mart_to_go_slim_lists(
         go_file=query_files['feats'], output_dir='/mnt/e/IGR_temp/new_blaster_test')
-
-    split_blast_to_fastas(blast_file_path='/mnt/e/IGR_temp/blaster_test/inputs_blast.txt',
-                          seqs_file_path='/mnt/e/IGR_temp/blaster_test/inputs.txt',
-                          go_file_path='/mnt/e/IGR_temp/blaster_test/go_lists',
-                          output_dir='/mnt/e/IGR_temp/split_test')
     '''
+
+    split_blast_to_fastas(
+        blast_file_path='/mnt/e/IGR_temp/blaster_all_test/inputs_blast.txt',
+        seqs_file_path='/mnt/e/IGR_temp/inputs.txt',
+        go_file_path='/mnt/e/IGR_temp/blaster_all_test/go_csvs',
+        output_dir='/mnt/e/IGR_temp/blaster_all_test/results')

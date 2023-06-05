@@ -18,6 +18,10 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
     # either change this to '' or add default val to --db_dir arg = '' (or None)
     db_dir = '.'
 
+    if args.analyze_all:
+        blaster.analyze_all(args)
+        return
+
     if args.download_biomart_files:
         try:
             biomart_files = blaster.query_biomart(
@@ -100,6 +104,7 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
                           anova_manova_mode=args.anova_manova_mode,
                           pcs=args.pc_number,
                           verbose=args.verbose,
+                          plot=args.draw_plot,
                           ss_type=args.ss_type,
                           triangle=args.not_triangle,
                           n_dim=args.n_dimensions)
@@ -195,6 +200,9 @@ def main():
 
     # BLASTER - SHARED ARGUMENTS
     blaster_parser.add_argument(
+        '--analyze_all', action='store_true', help='run all the analysis steps in one go. Most other options can still be used to customize the analysis.')
+
+    blaster_parser.add_argument(
         '-o', '--output_dir', help='output directory for the results')
 
     blaster_parser.add_argument(
@@ -233,8 +241,8 @@ def main():
     blaster_parser.add_argument(
         '-q', '--query', help='query file to use for BLAST searches. Can either be a FASTA file, a file pointing to FASTA files (one per line) or a folder with FASTA files')
 
-    blaster_parser.add_argument('-e', '--evalue', type=float,
-                                help='e-value threshold for BLAST search. Default: 10e-50')
+    blaster_parser.add_argument('-e', '--evalue', type=float, default=1e-49,
+                                help='e-value threshold for BLAST search. Default: 1e-49')
 
     blaster_parser.add_argument('--num_threads', type=int, default=4,
                                 help='number of threads to use for BLAST search. Default: 4')
@@ -363,9 +371,9 @@ def main():
             return
 
     if args.subparser_name == 'blaster':
-        if (not bool(args.download_biomart_files) and (bool(args.go_slim_list) ^ bool(args.go_mart_feats))):
+        if (not (bool(args.download_biomart_files) or bool(args.analyze_all)) and (bool(args.go_slim_list) ^ bool(args.go_mart_feats))):
             global_parser.error(
-                'either --download_biomart_files must be used or --go_slim_list and --go_mart_feats must be given together!')
+                'either --download_biomart_files or --analyze_all must be used or --go_slim_list and --go_mart_feats must be given together!')
             return
 
     # VARIABLES

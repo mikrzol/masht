@@ -8,16 +8,16 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
 
     Args:
         data_path (pathlib.Path): location of directory with subdirs with triangle (.tsv) files from mash.analyze_all
-        mode (str): _description_
-        groups_file (str): _description_
-        output_dir (pathlib.Path): _description_
-        anova_manova_mode (str, optional): _description_. Defaults to 'n'.
-        pcs (int, optional): _description_. Defaults to 4.
-        verbose (bool, optional): _description_. Defaults to False.
-        plot (list[str], optional): _description_. Defaults to ['1', '2'].
-        ss_type (int, optional): _description_. Defaults to 2.
-        triangle (bool, optional): _description_. Defaults to True.
-        n_dim (intorNone, optional): _description_. Defaults to None.
+        mode (str): what type of analysis to perform. Can be either 'anova' or 'manova'
+        groups_file (str): path to the file with group descriptions. The first column of this file should contain names of observations.
+        output_dir (pathlib.Path): where to save the results
+        anova_manova_mode (str, optional): How many parameters from the groups_file to consider. Defaults to 'n', which means to consider all of them.
+        pcs (int, optional): How many PCs to consider when performing ANOVA/MANOVA. Defaults to 4.
+        verbose (bool, optional): whether to increase verbosity. Defaults to False.
+        plot (list[str], optional): which PCs to plot when performing PCoA. Defaults to ['1', '2']. If not provided, no plots will be generated.
+        ss_type (int, optional): which sum of squares type to use in ANOVA analysis. Defaults to 2. Look up statsmodels.stats.anova.anova_lm for more details.
+        triangle (bool, optional): whether the input file has the triangle form. Defaults to True.
+        n_dim (int or None, optional): number of dimensions to use in PCoA. Defaults to None (meaning equal to number of observations).
     """
 
     from joblib import Parallel, delayed
@@ -295,7 +295,7 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
     Args:
         data_path (pathlib.Path): location of input file
         output_dir (pathlib.Path): output location
-        n_dim (intorNone, optional): number of dimensions to use in PCoA. Defaults to None (meaning equal to number of observations).
+        n_dim (int or None, optional): number of dimensions to use in PCoA. Defaults to None (meaning equal to number of observations).
         plot (list[str], optional): which PCs to plot if any. Defaults to [] (meaning: don't plot).
         triangle (bool, optional): whether the input file has the triangle form. Defaults to True.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
