@@ -27,15 +27,12 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
         pcoa_path = pathlib.Path(pcoa(data_path=file, output_dir=file.parent,
                                  n_dim=n_dim, plot=plot, triangle=triangle, verbose=verbose))
 
-        '''
-
         if mode == 'anova':
             anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent,
                   anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=verbose)
         else:
             manova(data_path=pcoa_path, groups_file=groups_file,
                    output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=verbose)
-        '''
 
     subdirs = list(
         set(f for f in pathlib.Path(data_path).rglob('*sketches_triangle.tsv')))
@@ -80,6 +77,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
 
     for file in files:
         df = pd.read_csv(file, sep='\t', index_col=0)
+        df.index = df.index.str.removeprefix('filtered_')
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
         # select columns with non-zero values only
@@ -157,6 +155,10 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, a
 
     for file in files:
         df = pd.read_csv(file, sep='\t', index_col=0)
+
+        # TODO temporary solution to remove prefix !!!
+        df.index = df.index.str.removeprefix('filtered_')
+
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
         if anova_manova_mode == 'repeat':
