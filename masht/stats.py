@@ -77,7 +77,9 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
 
     for file in files:
         df = pd.read_csv(file, sep='\t', index_col=0)
+        # remove prefix from index - for full analysis (analyze_all)
         df.index = df.index.str.removeprefix('filtered_')
+
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
         # select columns with non-zero values only
@@ -155,8 +157,7 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, a
 
     for file in files:
         df = pd.read_csv(file, sep='\t', index_col=0)
-
-        # TODO temporary solution to remove prefix !!!
+        # remove prefix from index - for full analysis (analyze_all)
         df.index = df.index.str.removeprefix('filtered_')
 
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
