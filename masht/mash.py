@@ -2,9 +2,7 @@ import subprocess
 import pathlib
 
 
-
 def _multiproc_task(subdirs: list[pathlib.Path]):
-    # TODO add subsequent steps of analysis to this task (from stats package)
     sketch_path = sketch('bin/', data_path=subdirs,
                          output_path=subdirs, verbose=verb)
     triangle('bin/', data_path=pathlib.Path(sketch_path),

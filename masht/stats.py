@@ -21,9 +21,9 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
     """
 
     from joblib import Parallel, delayed
+    from collections import Counter
 
     def _mp_analyze(file: pathlib.Path):
-
         pcoa_path = pathlib.Path(pcoa(data_path=file, output_dir=file.parent,
                                  n_dim=n_dim, plot=plot, triangle=triangle, verbose=verbose))
 
@@ -34,13 +34,16 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
             manova(data_path=pcoa_path, groups_file=groups_file,
                    output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=verbose)
 
-    subdirs = list(
-        set(f for f in pathlib.Path(data_path).rglob('*sketches_triangle.tsv')))
+    # get number of filtered_* files in each subdir to determine which subdirs to analyze
+    lst = [x.parent for x in pathlib.Path(
+        data_path).rglob('*filtered_*.fasta')]
+
+    my_dict = {k: v for k, v in Counter(lst).items() if v > 1}
+
+    subdirs = [x / 'sketches_triangle.tsv' for x in my_dict.keys()]
 
     Parallel(n_jobs=-1)(delayed(_mp_analyze)(subdir)
                         for subdir in subdirs)
-
-    pass
 
 
 def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
