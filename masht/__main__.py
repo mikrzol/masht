@@ -102,6 +102,7 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
                           groups_file=args.groups_file,
                           output_dir=pathlib.Path(args.output_dir),
                           anova_manova_mode=args.anova_manova_mode,
+                          formula=args.formula,
                           pcs=args.pc_number,
                           verbose=args.verbose,
                           plot=args.draw_plot,
@@ -119,7 +120,7 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
 
     if args.anova:
         stats.anova(data_path=pcoa_path or data_path, groups_file=args.groups_file,
-                    anova_manova_mode=args.anova_manova_mode, output_dir=args.output_dir, pcs=args.pc_number, ss_type=args.ss_type, triangle=args.not_triangle, verbose=args.verbose)
+                    anova_manova_mode=args.anova_manova_mode, formula=args.formula, output_dir=args.output_dir, pcs=args.pc_number, ss_type=args.ss_type, triangle=args.not_triangle, verbose=args.verbose)
 
     if args.manova:
         stats.manova(data_path=pcoa_path or data_path,
@@ -290,6 +291,8 @@ def main():
         '-amm', '--anova_manova_mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats. Defaults to \'n\'')
     stats_parser.add_argument(
         '-d', '--draw_plot', nargs=2, help='draw PCoA plot for chosen PCs. Two intigers required.')
+    stats_parser.add_argument('-f', '--formula', default=None,
+                              help='formula to use for ANOVA or MANOVA. Required if -a or -ma was selected')
     stats_parser.add_argument(
         '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA or MANOVA. Required if -a or -ma was selected')
     stats_parser.add_argument('-ma', '--manova', action='store_true',

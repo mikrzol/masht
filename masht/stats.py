@@ -3,7 +3,7 @@ from mash import _get_files
 import pandas as pd
 
 
-def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False, plot: list[str] = ['1', '2'], ss_type: int = 2, triangle: bool = True, n_dim: int or None = None) -> None:
+def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir: pathlib.Path, formula: str or None, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False, plot: list[str] = ['1', '2'], ss_type: int = 2, triangle: bool = True, n_dim: int or None = None) -> None:
     """Perform standardized full analysis of all files in the data_path directory
 
     Args:
@@ -28,7 +28,7 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
                                  n_dim=n_dim, plot=plot, triangle=triangle, verbose=verbose))
 
         if mode == 'anova':
-            anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent,
+            anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent, formula=formula,
                   anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=verbose)
         else:
             manova(data_path=pcoa_path, groups_file=groups_file,
@@ -38,7 +38,11 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
     lst = [x.parent for x in pathlib.Path(
         data_path).rglob('*filtered_*.fasta')]
 
-    my_dict = {k: v for k, v in Counter(lst).items() if v > 1}
+    counted_lst = Counter(lst)
+    print(f'Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories with less than {max(counted_lst.values())} files.')
+
+    my_dict = {k: v for k, v in counted_lst.items() if v ==
+               max(counted_lst.values())}
 
     subdirs = [x / 'sketches_triangle.tsv' for x in my_dict.keys()]
 
@@ -81,7 +85,8 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
     for file in files:
         df = pd.read_csv(file, sep='\t', index_col=0)
         # remove prefix from index - for full analysis (analyze_all)
-        df.index = df.index.str.removeprefix('filtered_')
+        df.index = df.index.str.removeprefix(
+            'filtered_').str.split('.').str.get(0)
 
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
@@ -99,6 +104,8 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         # convert Pandas df to R df
         with (ro.default_converter + pandas2ri.converter).context():
             m_df = ro.conversion.get_conversion().py2rpy(manova)
+
+        # TODO add a way to specify model (formula) by hand and use it
 
         # create formula and create model
         from rpy2.robjects import Formula
@@ -143,7 +150,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
     '''
 
 
-def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
+def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, formula: str or None, anova_manova_mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
     """perform ANOVA (either with repeats or n-way) on data in data_path file
 
     Args:
@@ -156,12 +163,24 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, a
         triangle (bool, optional): (not used) whether input is in the form of a triangle. Defaults to True.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
     """
+
     files = _get_files(data_path)
 
     for file in files:
+        # print('working on file:', file)
         df = pd.read_csv(file, sep='\t', index_col=0)
         # remove prefix from index - for full analysis (analyze_all)
-        df.index = df.index.str.removeprefix('filtered_')
+        df.index = df.index.str.removeprefix(
+            'filtered_').str.split('.').str.get(0)
+
+        # select columns with non-zero values only
+        df = df[df.columns[~(df == 0).all()]]
+
+        # trim to the num of columns that are non zero
+        if pcs > len(df.columns):
+            print(
+                f'In file {file.parent}: truncated to {len(df.columns)} parameters')
+            pcs = len(df.columns)
 
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
 
@@ -208,8 +227,12 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, a
             # values in brackets get PC1-PCn (parameters are before PCs in aov_df)
             for col in aov_df.columns[len(groups_selected.columns):len(groups_selected.columns)+pcs]:
                 # perform full ANOVA on selected factors (all interactions included)
-                model = ols(
-                    f'{col} ~ {" * ".join(groups_selected.columns)}', data=aov_df).fit()
+
+                # TODO add a way to specify model by hand and use it
+                if not formula:
+                    formula = f'{col} ~ {" * ".join(groups_selected.columns)}'
+
+                model = ols(f'{col} ~ {formula}', data=aov_df).fit()
 
                 if verbose:
                     print()
@@ -312,58 +335,64 @@ def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None =
     """
     import pandas as pd
     from skbio.stats.ordination import pcoa as skb_pcoa
+    import warnings
 
-    last_result = ''  # location of file to perform ANOVA later if chosen
-    files = _get_files(data_path)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-    for file in files:
-        if triangle:
-            df = pd.read_csv(file, sep='\t')
-            df = _get_full_dist_matrix(df)
-        else:
-            df = pd.read_csv(file, sep='\t', header=None)
+        last_result = ''  # location of file to perform ANOVA later if chosen
+        files = _get_files(data_path)
 
-        res = skb_pcoa(df, number_of_dimensions=n_dim or len(df))
-
-        names = [x.split('/')[-1].split('.')[0] for x in df.columns]
-        if triangle:
-            # rename rows
-            res.samples.index = names
-            # clean results
-            if not n_dim:
-                res.samples.drop(res.samples.columns[-1], axis=1, inplace=True)
-                res.eigvals = res.eigvals[:-1]
-                res.proportion_explained = res.proportion_explained[:-1]
-        res.eigvals.rename('eigenval', inplace=True)
-        res.proportion_explained.rename(
-            'proportion_explained', inplace=True)
-
-        if verbose:
-            print()
-            print(f'********** {file.name.split(".")[0]} **********')
-            print('========== Coordinates of samples in the ordination space: ==========')
-            print(res.samples)
-            print('\n========== Eigenvalues: ==========')
-            print(res.eigvals)
-            print('\n========== Proportion explained: ==========')
-            print(res.proportion_explained)
-
-        # plot
-        if plot:
+        for file in files:
             if triangle:
-                plot_pcoa(res=res, names=names,
-                          output_dir=output_dir, chosen_pcs=plot)
+                df = pd.read_csv(file, sep='\t')
+                df = _get_full_dist_matrix(df)
             else:
-                plot_pcoa(res=res, names=df.columns,
-                          output_dir=output_dir, chosen_pcs=plot)
+                df = pd.read_csv(file, sep='\t', header=None)
 
-        # create results file
-        res.samples.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.tsv', sep='\t')
-        last_result = f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.tsv'
-        res.eigvals.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.tsv', sep='\t')
-        res.proportion_explained.to_csv(
-            f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.tsv', sep='\t')
+            res = skb_pcoa(df, number_of_dimensions=n_dim or len(df))
 
-    return last_result
+            names = [x.split('/')[-1].split('.')[0] for x in df.columns]
+            if triangle:
+                # rename rows
+                res.samples.index = names
+                # clean results
+                if not n_dim:
+                    res.samples.drop(
+                        res.samples.columns[-1], axis=1, inplace=True)
+                    res.eigvals = res.eigvals[:-1]
+                    res.proportion_explained = res.proportion_explained[:-1]
+            res.eigvals.rename('eigenval', inplace=True)
+            res.proportion_explained.rename(
+                'proportion_explained', inplace=True)
+
+            if verbose:
+                print()
+                print(f'********** {file.name.split(".")[0]} **********')
+                print(
+                    '========== Coordinates of samples in the ordination space: ==========')
+                print(res.samples)
+                print('\n========== Eigenvalues: ==========')
+                print(res.eigvals)
+                print('\n========== Proportion explained: ==========')
+                print(res.proportion_explained)
+
+            # plot
+            if plot:
+                if triangle:
+                    plot_pcoa(res=res, names=names,
+                              output_dir=output_dir, chosen_pcs=plot)
+                else:
+                    plot_pcoa(res=res, names=df.columns,
+                              output_dir=output_dir, chosen_pcs=plot)
+
+            # create results file
+            res.samples.to_csv(
+                f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.tsv', sep='\t')
+            last_result = f'{output_dir}/{file.name.split(".")[0]}_pcoa_coords.tsv'
+            res.eigvals.to_csv(
+                f'{output_dir}/{file.name.split(".")[0]}_pcoa_eigenvals.tsv', sep='\t')
+            res.proportion_explained.to_csv(
+                f'{output_dir}/{file.name.split(".")[0]}_pcoa_proportions.tsv', sep='\t')
+
+        return last_result
