@@ -190,6 +190,12 @@ No installation is necessary - the package should work right away.
 
     > NB: MANOVA analysis is performed using R via `rpy2` package to transpile code and objects (like dataframes) between R and Python. This makes the execution a bit slower, but testing showed that results of n-way MANOVA using `statsmodels` are not calculated correctly as of the time of writing this docs. Once the issue is resolved, the MANOVA analysis will be performed using statsmodels and execution time will improve.
 
+- use the `--formula` option to specify the formula for ANOVA/MANOVA analysis. Only specify which exogenous (right hand side) variables to use and how to link them, e.g.: 'temp + genotype + time' - the endogenous (left hand side, PCs in this case) variables are inferred automatically based on other options, e.g. `--n`. <strong>By default a full model is created, e.g. one that includes all interactions between all the exogenous variables (with all exog variables with '*' between them)</strong>:
+
+    ```console
+    foo@bar: python3 masht stats <path_to_pcoa_coords_file> -a -g <path_to_groups_file> --formula 'Temp + Genotype + Time'
+    ```
+
 - parameters and options can be specified in a text file. Use `@<file_name>` to point to the file:
 
     ```console
@@ -219,6 +225,7 @@ No installation is necessary - the package should work right away.
 |---|---|---|
 |`-a`|`--anova`|perfom ANOVA on selected files. NB – a file with grouping has to be provided with the `-g` flag|
 |`-d`|`--draw_plot`|draw PCoA plot when performing PCoA analysis. Two integers that signify which PCs to plot are required|
+|`-f`|`--formula`|formula to use for ANOVA/MANOVA analysis. Specify only exogenous (right hand side, independent) variables and how to link them, e.g. 'temp + genotype + time'. The names must be consistent with columns in the `--groups_file` file.|
 |`-g`|`--groups_file`|location of the .tsv file with groups for ANOVA/ MANOVA analysis. Required if `-a` or `-ma` was selected|
 |`-ma`|`--manova`|perform MANOVA analysis on selected files. NB – a file with grouping has to be provided with the `-g` flag|
 |`-mo`|`--mode`|select which type of ANOVA to perform. Should be either 'n' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or 'repeat' for ANOVA with repeats. Defaults to 'n'|
