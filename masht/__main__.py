@@ -396,5 +396,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # TODO maybe implement own parser for input from file and pass the correctly parsed args from stdout to the main function?
     main()

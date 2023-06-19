@@ -216,7 +216,6 @@ def sketch(bin_path: str, data_path: pathlib.Path, output_path: str = '.', verbo
         print('\nCreating mash sketches...')
 
     files = _get_files(data_path)
-    # TODO could add filtering files to have only .fasta or .fa files
 
     proc = subprocess.run([f'{bin_path}mash', 'sketch',
                            *files,

@@ -24,22 +24,32 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
     from collections import Counter
 
     def _mp_analyze(file: pathlib.Path):
+        if verbose:
+            print(f'Performing PCoA on {str(file.parent).split("/")[-1]}...')
         pcoa_path = pathlib.Path(pcoa(data_path=file, output_dir=file.parent,
-                                 n_dim=n_dim, plot=plot, triangle=triangle, verbose=verbose))
+                                 n_dim=n_dim, plot=plot, triangle=triangle, verbose=False))
 
         if mode == 'anova':
+            if verbose:
+                print(
+                    f'Performing ANOVA on {str(file.parent).split("/")[-1]}...')
             anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent, formula=formula,
-                  anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=verbose)
+                  anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=False)
         else:
-            manova(data_path=pcoa_path, groups_file=groups_file,
-                   output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=verbose)
+            if verbose:
+                print(
+                    f'Performing MANOVA on {str(file.parent).split("/")[-1]}...')
+            # TODO MANOVA does not work
+            manova(data_path=pcoa_path, groups_file=groups_file, formula=formula,
+                   output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=False)
 
     # get number of filtered_* files in each subdir to determine which subdirs to analyze
     lst = [x.parent for x in pathlib.Path(
         data_path).rglob('*filtered_*.fasta')]
 
     counted_lst = Counter(lst)
-    print(f'Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories with less than {max(counted_lst.values())} files.')
+    print(
+        f'masht stats analyze_all: Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories with less than {max(counted_lst.values())} files.')
 
     my_dict = {k: v for k, v in counted_lst.items() if v ==
                max(counted_lst.values())}
@@ -50,7 +60,7 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
                         for subdir in subdirs)
 
 
-def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
+def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, formula: str or None, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
     """perform MANOVA analyses of selected files
 
     Args:
@@ -93,6 +103,10 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         # select columns with non-zero values only
         df = df[df.columns[~(df == 0).all()]]
 
+        # trim to the num of columns that are non zero
+        if pcs > len(df.columns):
+            pcs = len(df.columns)
+
         manova = pd.merge(groups, df, left_index=True, right_index=True)
 
         # get number of params to consider
@@ -105,13 +119,15 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         with (ro.default_converter + pandas2ri.converter).context():
             m_df = ro.conversion.get_conversion().py2rpy(manova)
 
-        # TODO add a way to specify model (formula) by hand and use it
-
         # create formula and create model
         from rpy2.robjects import Formula
-        formula = Formula(
-            f'cbind({",".join(df.columns[0:pcs])}) ~ {" * ".join(groups.columns[:anova_manova_mode])}')
-        man = stats.manova(formula=formula, data=m_df)
+        if not formula:
+            form = " * ".join(groups.columns[:anova_manova_mode])
+        else:
+            form = formula
+        man_formula = Formula(
+            f'cbind({",".join(df.columns[0:pcs])}) ~ {form}')
+        man = stats.manova(formula=man_formula, data=m_df)
 
         # convert results to Pandas df
         df_list = []
@@ -125,8 +141,12 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         big_df = pd.concat(df_list)
 
         # save results to file
-        big_df.to_csv(
-            f'{output_dir}/manova_{pcs}_PCs_{anova_manova_mode}_params.tsv', sep='\t')
+        if not formula:
+            big_df.to_csv(
+                f'{output_dir}/manova_{pcs}_PCs_{anova_manova_mode}_params.tsv', sep='\t')
+        else:
+            big_df.to_csv(
+                f'{output_dir}/manova_{pcs}_PCs_{formula.replace(" ", "")}.tsv', sep='\t')
 
         # report results if verbose
         if verbose:
@@ -178,8 +198,6 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, f
 
         # trim to the num of columns that are non zero
         if pcs > len(df.columns):
-            print(
-                f'In file {file.parent}: truncated to {len(df.columns)} parameters')
             pcs = len(df.columns)
 
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
@@ -228,7 +246,6 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, f
             for col in aov_df.columns[len(groups_selected.columns):len(groups_selected.columns)+pcs]:
                 # perform full ANOVA on selected factors (all interactions included)
 
-                # TODO add a way to specify model by hand and use it
                 if not formula:
                     formula = f'{col} ~ {" * ".join(groups_selected.columns)}'
 
