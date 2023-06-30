@@ -19,6 +19,7 @@ def analyze_all(args):
         name=f'{today}_BLAST_DB',
         db_type=args.db_type or 'nucl',
         no_parse_seqids=args.no_parse_seqids,
+        output_dir=args.output_dir,
         verbose=args.verbose)
 
     blast_files = blast_run(
@@ -131,7 +132,7 @@ def query_biomart(output_dir: str, verbose: bool = False) -> dict:
     return dict(zip(['feats', 'seqs'], [f'{output_dir}/{name}.txt' for name in ['biomart_feats', 'biomart_seqs']]))
 
 
-def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_parse_seqids: bool = False, verbose: bool = False) -> str:
+def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_parse_seqids: bool = False, output_dir: str = '.', verbose: bool = False) -> str:
     """Create blast index
 
     Args:
@@ -154,7 +155,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
     # TESTING - removed -parse_seqs temporarily
     # TODO remove cwd to parent
     proc = subprocess.run(['makeblastdb', '-in', pathlib.Path(input_file), '-dbtype',
-                           db_type, '-title', name, '-out', f'{name}', '-blastdb_version', '5'], cwd=pathlib.Path(input_file).parent, capture_output=True)
+                           db_type, '-title', name, '-out', f'{name}', '-blastdb_version', '5'], cwd=pathlib.Path(output_dir), capture_output=True)
 
     if verbose:
         print(proc.stdout.decode(), end='')
@@ -164,7 +165,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
         print(proc.stderr.decode())
         return
 
-    return str(pathlib.Path(input_file).parent)  # blastdb location
+    return str(pathlib.Path(output_dir))  # blastdb location
 
 
 def blast_run(input_path: str, db: str, db_dir: str = '.', blast_type: str = 'blastn', evalue: float = 10e-50, num_threads: int = 4, outfmt: str = '6', output_dir: str = '.', verbose: bool = False, n_jobs: int = -1) -> list[str]:

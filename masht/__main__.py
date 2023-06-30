@@ -28,14 +28,16 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
                 output_dir=args.output_dir, verbose=args.verbose)
             args.db_fasta = biomart_files['seqs']
             args.go_mart_feats = biomart_files['feats']
-        except:
+        except Exception as e:
+            print(f'Error encountered: {e}')
             return
 
     if args.create_db:
         try:
             db_dir = blaster.blast_create_index(input_file=args.db_fasta, name=args.name,
-                                                db_type=args.db_type or 'nucl', no_parse_seqids=args.no_parse_seqids, verbose=args.verbose)
-        except:
+                                                db_type=args.db_type or 'nucl', no_parse_seqids=args.no_parse_seqids, output_dir=args.output_dir, verbose=args.verbose)
+        except Exception as e:
+            print(f'Error encountered: {e}')
             return
 
     blast_files = []
@@ -50,7 +52,8 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
                 outfmt=args.outfmt or '6',
                 output_dir=args.output_dir,
                 verbose=args.verbose)
-        except:
+        except Exception as e:
+            print(f'Error encountered: {e}')
             return
 
     go_files = []
@@ -58,7 +61,8 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
         try:
             go_files = blaster.go_mart_to_go_csvs(
                 go_file=args.go_mart_feats, output_dir=args.output_dir)
-        except:
+        except Exception as e:
+            print(f'Error encountered: {e}')
             return
 
     if args.split:
@@ -70,7 +74,8 @@ def perform_blaster(args: argparse.ArgumentParser) -> None:
                 blast_outfmt=args.outfmt or 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore',
                 output_dir=args.output_dir,
                 verbose=args.verbose)
-        except:
+        except Exception as e:
+            print(f'Error encountered: {e}')
             return
 
 
