@@ -26,30 +26,43 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
     def _mp_analyze(file: pathlib.Path):
         if verbose:
             print(f'Performing PCoA on {str(file.parent).split("/")[-1]}...')
-        pcoa_path = pathlib.Path(pcoa(data_path=file, output_dir=file.parent,
-                                 n_dim=n_dim, plot=plot, triangle=triangle, verbose=False))
+        try:
+            pcoa_path = pathlib.Path(pcoa(data_path=file, output_dir=file.parent,
+                                          n_dim=n_dim, plot=plot, triangle=triangle, verbose=False))
+        except Exception as e:
+            print(f"Error occurred for {str(file)}: {str(e)}")
+            return
 
         if mode == 'anova':
             if verbose:
                 print(
                     f'Performing ANOVA on {str(file.parent).split("/")[-1]}...')
-            anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent, formula=formula,
-                  anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=False)
+            try:
+                anova(data_path=pcoa_path, groups_file=groups_file, output_dir=file.parent, formula=formula,
+                      anova_manova_mode=anova_manova_mode, pcs=pcs, ss_type=ss_type, triangle=triangle, verbose=False)
+            except Exception as e:
+                print(f"Error occurred for {str(file)}: {str(e)}")
+                return
+
         else:
             if verbose:
                 print(
                     f'Performing MANOVA on {str(file.parent).split("/")[-1]}...')
-            # TODO MANOVA does not work
-            manova(data_path=pcoa_path, groups_file=groups_file, formula=formula,
-                   output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=False)
+            try:
+                manova(data_path=pcoa_path, groups_file=groups_file, formula=formula,
+                       output_dir=file.parent, anova_manova_mode=anova_manova_mode, pcs=pcs, verbose=False)
+            except Exception as e:
+                print(f"Error occurred for {str(file)}: {str(e)}")
+                return
 
     # get number of filtered_* files in each subdir to determine which subdirs to analyze
     lst = [x.parent for x in pathlib.Path(
         data_path).rglob('*filtered_*.fasta')]
 
     counted_lst = Counter(lst)
+
     print(
-        f'masht stats analyze_all: Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories with less than {max(counted_lst.values())} files.')
+        f'masht stats analyze_all: Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories ({" ,".join([str(k) for k, v in counted_lst.items() if v < max(counted_lst.values())])}) with less than {max(counted_lst.values())} files.')
 
     my_dict = {k: v for k, v in counted_lst.items() if v ==
                max(counted_lst.values())}
@@ -133,7 +146,8 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
         df_list = []
         with (ro.default_converter + pandas2ri.converter).context():
             for test in ['Wilks', 'Pillai', 'Hotelling-Lawley', 'Roy']:
-                temp = ro.conversion.get_conversion().rpy2py(broom.tidy_manova(man, test=test))
+                temp = ro.conversion.get_conversion().rpy2py(
+                    broom.tidy_manova(man, test=test))
                 temp.rename({temp.columns[2]: 'value'}, axis=1, inplace=True)
                 temp['test'] = test
                 temp.set_index(['test', 'term'], inplace=True)
