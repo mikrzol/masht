@@ -261,7 +261,7 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, f
                 # perform full ANOVA on selected factors (all interactions included)
 
                 if not formula:
-                    formula = f'{col} ~ {" * ".join(groups_selected.columns)}'
+                    formula = f'{" * ".join(groups_selected.columns)}'
 
                 model = ols(f'{col} ~ {formula}', data=aov_df).fit()
 

@@ -140,6 +140,7 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
         name (str): name of blast database
         db_type (str, optional): blast database type. Defaults to 'nucl'.
         no_parse_seqids (bool, optional): whether to NOT parse seqids. Defaults to False.
+        output_dir (str, optional): path to output directory. Defaults to '.'.
         verbose (bool, optional): whether to increase verbosity. Defaults to False.
 
     Returns:
@@ -152,8 +153,6 @@ def blast_create_index(input_file: str, name: str, db_type: str = 'nucl', no_par
     parse_seqids = '-parse_seqids' if not no_parse_seqids else ''
 
     # run makeblastdb
-    # TESTING - removed -parse_seqs temporarily
-    # TODO remove cwd to parent
     proc = subprocess.run(['makeblastdb', '-in', pathlib.Path(input_file), '-dbtype',
                            db_type, '-title', name, '-out', f'{name}', '-blastdb_version', '5'], cwd=pathlib.Path(output_dir), capture_output=True)
 
@@ -277,8 +276,6 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
     go_files = _get_files(pathlib.Path(go_file_path)) if not isinstance(
         go_file_path, list) else list(map(pathlib.Path, go_file_path))
     seqs_files = _get_files(pathlib.Path(seqs_file_path))
-
-    print(f'blast_files = {blast_files}')
 
     def _mp_split(seqs_files: list[pathlib.Path], go_file: pathlib.Path, blast_files: list[pathlib.Path]):
         # read in go file
