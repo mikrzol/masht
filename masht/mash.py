@@ -58,7 +58,6 @@ def _get_files(data_path: pathlib.Path) -> list[pathlib.Path]:
     """
     files = []
     if data_path.is_file():
-        # TESTING - temporary (?) solution for when file leads to .msh
         if data_path.suffix == '.txt':
             with data_path.open('r') as in_f:
                 files = [pathlib.Path(f) for f in in_f.read().strip().split()]
@@ -112,7 +111,6 @@ def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_path: pathlib.Path,
     # get files
     files = _get_files(data_path)
 
-    # TESTING - remove paths loop later
     for file in files:
         if file.suffix == '.msh':
             if verbose:
@@ -194,7 +192,6 @@ def info(bin_path: str, data_path: str or pathlib.Path):
         data_path (str or pathlib.Path): location of the sketch files
     """
 
-    # TESTING can remove this types of messages later
     print('\nInformation on selected files:')
 
     _loop_over_all_sketch_files(
@@ -249,7 +246,6 @@ def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: s
         if data_path.suffix != '.msh':
             files = _get_files(data_path)
 
-            # TESTING - remove paths loop later
             proc = subprocess.run([f'{bin_path}mash', 'paste', f'{output_path}/{file_name}',
                                    *files,
                                    ],
@@ -258,7 +254,6 @@ def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: s
                 return
         # .msh file
         else:
-            # TESTING - remove paths loop later
 
             proc = subprocess.run([f'{bin_path}mash', 'paste', f'{output_path}/{file_name}',
                                    data_path,
@@ -269,7 +264,6 @@ def paste(bin_path: str, data_path: pathlib.Path, file_name: str, output_path: s
     # dir
     else:
         files = [file for file in data_path.iterdir() if file.suffix == '.msh']
-        # TESTING - remove paths loop later
 
         proc = subprocess.run([f'{bin_path}mash', 'paste', f'{output_path}/{file_name}',
                                *files,
@@ -287,7 +281,6 @@ def screen(bin_path: str, data_path: pathlib.Path, query: pathlib.Path):
         data_path (pathlib.Path): input location
         query (pathlib.Path): location of query file[s]. Can be a single file, directory or file with relative paths to selected files.
     """
-    # TESTING can remove this types of messages later
     print('\nScreening selected files:')
 
     _loop_over_all_sketch_files(

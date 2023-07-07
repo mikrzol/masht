@@ -1,5 +1,4 @@
 # MASHt - MASH toolkit
-[//]: # (#TODO update readme) 
 
 Python toolkit for the MASH tool and streamlined statistical analysis for Linux.
 
