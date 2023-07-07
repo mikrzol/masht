@@ -1,0 +1,12 @@
+path/to/results/of/masht.blaster
+--analyze_all
+--mode
+anova
+--groups_file
+path/to/groups/file
+--formula
+genotype + type_of_sample
+--draw_plot
+1
+2
+--verbose

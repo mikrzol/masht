@@ -290,8 +290,6 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
         if verbose:
             print(f'Splitting {go_file.stem} file with {len(tun)} IDs...')
 
-        # TODO correct naming of folders (replace spaces with _)
-        go_file.stem.replace(' ', '_')
         # create output dir
         pathlib.Path(f'{output_dir}/{go_file.stem}').mkdir(
             parents=True, exist_ok=True)

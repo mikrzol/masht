@@ -1,0 +1,2 @@
+path/to/directory/with/results/of/masht.blaster
+--analyze_all

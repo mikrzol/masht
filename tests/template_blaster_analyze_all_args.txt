@@ -1,0 +1,10 @@
+--analyze_all
+--db_fasta
+path/to/biomart/sequences/fasta/file
+--go_mart_feats
+path/to/biomart/features/file
+--query
+path/to/file/specifying/input/files
+--output_dir
+path/to/output/directory
+--verbose
