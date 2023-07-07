@@ -61,9 +61,11 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
 
     counted_lst = Counter(lst)
 
-    separator = ",\n\t"
-    print(
-        f'masht stats analyze_all: Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories:\n\t{separator.join([str(k) for k, v in counted_lst.items() if v < max(counted_lst.values())])}\nwith less than {max(counted_lst.values())} *filtered_*.fasta files.\n')
+    # report omitting if necessary
+    if sum([1 for x in counted_lst.values() if x < max(counted_lst.values())]):
+        separator = ",\n\t"
+        print(
+            f'masht stats analyze_all: Omitting {sum([1 for x in counted_lst.values() if x < max(counted_lst.values())])} subdirectories:\n\t{separator.join([str(k) for k, v in counted_lst.items() if v < max(counted_lst.values())])}\nwith less than {max(counted_lst.values())} *filtered_*.fasta files.\n')
 
     my_dict = {k: v for k, v in counted_lst.items() if v ==
                max(counted_lst.values())}

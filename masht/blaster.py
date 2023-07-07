@@ -244,6 +244,8 @@ def go_mart_to_go_csvs(go_file: str, output_dir: str, n_jobs: int = 10) -> list[
     go_df = pd.read_csv(go_file, sep='\t')
 
     # group by go slim terms (assuming last column is go slim term)
+    go_df.iloc[:, -1] = go_df.iloc[:, -1].str.replace('\t', '')
+    go_df.iloc[:, -1] = go_df.iloc[:, -1].str.replace(r'\s+', ' ', regex=True)
     grouped = go_df.groupby(go_df.columns[-1])
 
     with Manager() as manager:
@@ -288,6 +290,8 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
         if verbose:
             print(f'Splitting {go_file.stem} file with {len(tun)} IDs...')
 
+        # TODO correct naming of folders (replace spaces with _)
+        go_file.stem.replace(' ', '_')
         # create output dir
         pathlib.Path(f'{output_dir}/{go_file.stem}').mkdir(
             parents=True, exist_ok=True)
