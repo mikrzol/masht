@@ -21,6 +21,8 @@ def analyze_all(go_dir: str, verbose: bool = False):
     subdirs = list(
         set(f.parent for f in pathlib.Path(go_dir).rglob('*.fasta')))
 
+    # TODO add fastq support
+
     # workaround for passing verbose to _multiproc_task
     global verb
     verb = verbose
@@ -78,17 +80,38 @@ def _format_triangle_output(text: str) -> str:
     Returns:
         str: formatted (.tsv style) output
     """
-    from itertools import combinations
+    import pandas as pd
+    import numpy as np
+    import re
 
-    text = [line.split('\t') for line in text.strip().split('\n')]
-    samples = [line[0] for line in text[1:]]
-    values = [el for line in text[2:] for el in line[1:]]
+    # read the text
+    text = [line.split('\t') for line in text.strip().split('\n')][1:]
+    # get sample names
+    samples = [line[0] for line in text]
+    # get values - lower triangle
+    vals = np.zeros((len(samples), len(samples)))
+    for i, line in enumerate(text):
+        for j, el in enumerate(line[1:]):
+            vals[i, j] = float(el)
 
-    combs = [f'{line[0]}\t{line[1]}' for line in combinations(samples, r=2)]
-    final = ['seq_A\tseq_B\tdistance'] + \
-        ['\t'.join(el) for el in zip(combs, values)]
+    # get the full matrix
+    full_mtx = np.triu(vals.T, 1) + vals
+    # convert to pandas df
+    full_df = pd.DataFrame(full_mtx, index=samples, columns=samples, dtype=str)
+    # now get only the upper triangle
+    triangle_df = full_df.where(np.triu(np.ones(full_df.shape)).astype(bool))
+    triangle_df = triangle_df.stack().str.strip().reset_index()
+    # name the columns
+    triangle_df.columns = ['seq_A', 'seq_B', 'distance']
+    # get rid of the diagonal
+    triangle_df = triangle_df[triangle_df['seq_A'] != triangle_df['seq_B']]
 
-    return final
+    # convert to string
+    triangle_df = triangle_df.to_string(index=False).strip()
+    # clean up by converting multiple spaces to tabs
+    triangle_df = re.sub(' +', '\t', triangle_df)
+    # for some dumb reason sometimes lines start with space (changed to tabs above) even after .strip() - need to remove this manually
+    return [el.lstrip('\t') for el in triangle_df.split('\n')]
 
 
 def _loop_over_all_sketch_files(data_path: pathlib.Path, bin_path: pathlib.Path, mash_cmd: str, query: pathlib.Path = '', verbose: bool = False, output_path: str = '.') -> None:

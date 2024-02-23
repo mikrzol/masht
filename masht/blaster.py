@@ -244,6 +244,7 @@ def go_mart_to_go_csvs(go_file: str, output_dir: str, n_jobs: int = 10) -> list[
     go_df = pd.read_csv(go_file, sep='\t')
 
     # group by go slim terms (assuming last column is go slim term)
+    # TODO change from -1 to getting by name?
     go_df.iloc[:, -1] = go_df.iloc[:, -1].str.replace('\t', '')
     go_df.iloc[:, -1] = go_df.iloc[:, -1].str.replace(r'\s+', ' ', regex=True)
     grouped = go_df.groupby(go_df.columns[-1])

@@ -1,4 +1,5 @@
 # MASHt - MASH toolkit
+[//]: # (#TODO update readme mentioning the requirement to have term to group by as -1 in go_mart_to_go_csvs)
 
 Python toolkit for the MASH tool and streamlined statistical analysis for Linux.
 
@@ -19,6 +20,7 @@ It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA
   - matplotlib
   - rpy2
   - statsmodels
+  - skbio
 - R
   - stats
   - broom
@@ -50,7 +52,9 @@ A typical order of full analysis would be as follows:
 
 The `--analyze_all` option for each respective module (step) allows for fully automated, multiprocessed analysis of specified files.
 
-Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), it is recommended to use such files to make managing the arguments easier. Example files are provided in the `tests/` directory. <strong> NB. There should be no trailing spaces on any of the lines in the file! </strong> 
+Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), it is recommended to use such files to make managing the arguments easier. Example files are provided in the `tests/` directory. 
+
+<strong> NB. There should be no trailing spaces on any of the lines in the file! </strong> 
 
 
 ### mash module
@@ -194,6 +198,8 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
     ```console
     foo@bar: python3 masht stats <path_to_pcoa_coords_file> -a -g <path_to_groups_file>
     ```
+
+    **NB.** `<path_to_groups_file>` should be a tab-separated file!
 
     Names of observations in `<path_to_groups_file>` file should be the same as in `<path_to_pcoa_coords_file>` file. The file should look something like this:
 
