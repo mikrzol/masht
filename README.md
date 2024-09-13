@@ -5,7 +5,7 @@ Python toolkit for the MASH tool and streamlined statistical analysis for Linux.
 
 ## Description
 
-This toolkit serves to automate work that includes MASH. 
+This toolkit serves to automate work that includes MASH [Ondov et al.](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0997-x). 
 
 The blast module allows allows for multiprocessed automatized separation of transcripts/ reads by GO (gene ontology) terms. 
 
