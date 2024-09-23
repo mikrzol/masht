@@ -20,7 +20,7 @@ It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA
   - matplotlib
   - rpy2
   - statsmodels
-  - skbio
+  - scikit-bio
 - R
   - stats
   - broom
