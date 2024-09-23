@@ -22,7 +22,6 @@ It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA
   - statsmodels
   - scikit-bio
 - R
-  - stats
   - broom
 - mash (in binary in the masht/bin/ directory, as included)
 - Linux OS (commands from the `stats` subcommand can also be run on Windows)
