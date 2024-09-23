@@ -186,7 +186,7 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
 
     NB: the `<path_to_file>` file has to have a .txt extension!
 
-  - number of dimensions is controlled with the `-n` option. Give an intiger to specify the number of dimensions or leave it empty to perform PCoA analysis on all dimensions:
+  - number of dimensions is controlled with the `-n` option. Give an integer to specify the number of dimensions or leave it empty to perform PCoA analysis on all dimensions:
 
     ```console
     foo@bar: python3 masht stats <path_to_triangle_file> -p -n 4
