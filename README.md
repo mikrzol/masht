@@ -37,15 +37,15 @@ Remember to install all dependencies.
 
 A typical order of full analysis would be as follows:
 
-1. BLAST step:
+1. BLAST step – `blaster` module, **optional**:
     1. downloading BioMart sequences and features (not necessary when using custom sequences and features)
     2. creating a BLAST database
     3. running BLAST
     4. splitting BLAST results by GOs
-2. MASH step:
+2. MASH step – `mash` module:
     1. creating MASH sketches
     2. calculating distances between sketches
-3. stats step:
+3. stats step – `stats` module:
     1. performing PCoA analysis
     2. performing ANOVA/MANOVA analysis
 
@@ -55,8 +55,73 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
 
 <strong> NB. There should be no trailing spaces on any of the lines in the file! </strong> 
 
+### Terms explanations
+
+- for explanations of terms such as triangle, sketches, etc. see the [MASH documentation](https://mash.readthedocs.io/en/latest/index.html) 
+
+### blaster module
+
+This **optional** step enables splitting observations by their GO annotations.
+
+All tasks related to BLAST (creation of index, blasting, splitting results by GO terms etc.) can be performed with one command. This way paths for input files for subsequent steps are inferred automatically. Example file with arguments would look like this:
+
+```txt
+--create_db
+--db_fasta
+../path/to/fasta_file_to_create_index_on (usually biomart sequences)
+--name
+name_of_the_index
+--blast
+--query
+../path/to/file(s)_to_blast
+--evalue
+1e-49
+--go_slim_list
+../path/to/file(s)_with_go_terms
+--split
+../path/to/file(s)_with_sequences_to_split_by_go_terms (usually same as --query)
+--output_dir
+path/to/output_dir
+--verbose
+```
+
+The same result can be achieved by using the ```--analyze_all``` option, template arguments file for which is provided in the `tests/` directory.
+
+#### Inputs
+- `--db_fasta` - a FASTA file
+- `--query` - a file with sequences (e.g., FASTA), a directory with files with sequences in it or a .txt file with paths to the files to process
+- `--go_slim_list` - a text file with annotations. Last column will be used for splitting
+
+#### blaster options (flags)
+
+|option|long name|description|
+|---|---|---|
+||`--analyze_all`|perform all BLAST-related tasks|
+|`-b`|`--blast`|perform BLAST searches on files specified with selected `--query`|
+|`-cdb`|`--create_db`|create BLAST database from the -db_fasta FASTA file|
+|`-d`|`--download_biomart_files`|download GO Mart files from Ensembl Biomart based on data/*.xml queries|
+|`-dbt`|`--db_type`|type of the BLAST database to create (nucl or prot). Default: nucl.|
+|`-e`|`--evalue`|e-value threshold for BLAST search. Default: 10e-50|
+|`-gsl`|`--go_slim_list`|create GO slim lists from provided GO Mart file|
+|`-h`|`--help`|show this help message and exit
+|`-n`|`--name`|name of the BLAST database to create or use|
+|`-o`|`--output_dir`| output directory for the results|
+|`-outfmt`|`--outfmt`|output format for BLAST results. Default: 6. Uses BLAST+ format codes.|
+|`-q`|`--query`|query file to use for BLAST searches. Can either be a FASTA file or a file pointing to FASTA files (one per line) or a folder with FASTA files|
+|`-s`|`--split`|split FASTA file provided here by GOs and BLAST results|
+|`-v`|`--verbose`|verbose output|
+||`--db_dir`|location of the BLAST database to use. Inferred automatically if `--create_db` is used|
+||`--db_fasta`|location of the FASTA file to use for creating BLAST database|
+||`--go`|location of the folder with go_list subfolders created by --go_slim_list. Inferred automatically if `--go_slim_list is used`|
+||`--go_mart_feats`|path to file with GO features to use in --go_slim_list|
+||`--in_blast_file`|location of the BLAST results file(s). Inferred automatically if `--blast` is used|
+||`--n_jobs`|number of jobs to run in parallel for `--go_slim_list`. Default: 10|
+||`--no_parse_seqids`|DO NOT parse SeqIDs in FASTA file when creating BLAST database|
+||`--num_threads`|number of threads to use for BLAST search. Default: 4|
 
 ### mash module
+
+NB. The observations **do not** have to be split with `blaster`.
 
 - `--analyze_all` option allows for fully automated, multiprocessed analysis of masht.blaster `--split` results. MASH sketches files and triangle distance matrices will be created in all subdirectiories of selected file, e.g.:
     ```console
@@ -137,6 +202,10 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
     -v
     ```
 
+#### Inputs
+
+- files with sequences (FASTA, FASTQ, contigs, scaffolds, etc.)
+
 #### mash options (flags)
 
 |option|long name|description|
@@ -151,7 +220,7 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
 |`-p`|`--paste`|paste multiple sketch files into a new one|
 |`-s`|`--sketch`|create sketches of selected files|
 |`-sc`|`--screen`|determine whether query sequences are within a sketch file|
-|`-t`|`--triangle`|generate matrix of distances in a sketch|
+|`-t`|`--triangle`|generate matrix of distances in a sketch (a triangle distance matrix)|
 |`-v`|`--verbose`|print more descriptions of performed actions to the console|
 
 ### stats module
@@ -276,60 +345,6 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
 |`-pc`|`--pcs`|number of PCs to analyse with ANOVA. Defaults to 4|
 |`-ss`|`--ss_type`|type of sum of squares to use for ANOVA. Defaults to 2|
 |`-v`|`--verbose`|print more descriptions of performed actions to the console|
-
-### blaster module
-
-All tasks related to BLAST (creation of index, blasting, splitting results by GO terms etc.) can be performed with one command. This way paths for input files for subsequent steps are inferred automatically. Example file with arguments would look like this:
-
-```txt
---create_db
---db_fasta
-../path/to/fasta_file_to_create_index_on (usually biomart sequences)
---name
-name_of_the_index
---blast
---query
-../path/to/file(s)_to_blast
---evalue
-1e-49
---go_slim_list
-../path/to/file(s)_with_go_terms
---split
-../path/to/file(s)_with_sequences_to_split_by_go_terms (usually same as --query)
---output_dir
-path/to/output_dir
---verbose
-```
-
-The same result can be achieved by using the ```--analyze_all``` option, template arguments file for which is provided in the `tests/` directory.
-
-
-#### blaster options (flags)
-
-|option|long name|description|
-|---|---|---|
-||`--analyze_all`|perform all BLAST-related tasks|
-|`-b`|`--blast`|perform BLAST searches on files specified with selected `--query`|
-|`-cdb`|`--create_db`|create BLAST database from the -db_fasta FASTA file|
-|`-d`|`--download_biomart_files`|download GO Mart files from Ensembl Biomart based on data/*.xml queries|
-|`-dbt`|`--db_type`|type of the BLAST database to create (nucl or prot). Default: nucl.|
-|`-e`|`--evalue`|e-value threshold for BLAST search. Default: 10e-50|
-|`-gsl`|`--go_slim_list`|create GO slim lists from provided GO Mart file|
-|`-h`|`--help`|show this help message and exit
-|`-n`|`--name`|name of the BLAST database to create or use|
-|`-o`|`--output_dir`| output directory for the results|
-|`-outfmt`|`--outfmt`|output format for BLAST results. Default: 6. Uses BLAST+ format codes.|
-|`-q`|`--query`|query file to use for BLAST searches. Can either be a FASTA file or a file pointing to FASTA files (one per line) or a folder with FASTA files|
-|`-s`|`--split`|split FASTA file provided here by GOs and BLAST results|
-|`-v`|`--verbose`|verbose output|
-||`--db_dir`|location of the BLAST database to use. Inferred automatically if `--create_db` is used|
-||`--db_fasta`|location of the FASTA file to use for creating BLAST database|
-||`--go`|location of the folder with go_list subfolders created by --go_slim_list. Inferred automatically if `--go_slim_list is used`|
-||`--go_mart_feats`|path to file with GO features to use in --go_slim_list|
-||`--in_blast_file`|location of the BLAST results file(s). Inferred automatically if `--blast` is used|
-||`--n_jobs`|number of jobs to run in parallel for `--go_slim_list`. Default: 10|
-||`--no_parse_seqids`|DO NOT parse SeqIDs in FASTA file when creating BLAST database|
-||`--num_threads`|number of threads to use for BLAST search. Default: 4|
 
 
 ## Help
