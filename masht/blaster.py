@@ -305,7 +305,7 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
 
             # select only the rows with highest e-value for each group based on qseqid
             mask = blast_df.groupby('qseqid')['pident'].transform(
-                max) == blast_df['pident']
+                'max') == blast_df['pident']
 
             # filter out rows in blast_df with highest pident for a group not in tun
             filtered_df = blast_df[mask & blast_df['sseqid'].isin(tun)]
