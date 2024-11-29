@@ -21,6 +21,7 @@ It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA
   - rpy2
   - statsmodels
   - scikit-bio
+  - joblib
 - R
   - broom
 - mash (in binary in the masht/bin/ directory, as included)
@@ -122,6 +123,10 @@ The same result can be achieved by using the ```--analyze_all``` option, templat
 ### mash module
 
 NB. The observations **do not** have to be split with `blaster`.
+
+The `mash` module allows for creating MASH sketches, calculating distances between them and performing other operations on them.
+
+NB. The comparisons are made between sequence sets (multiple files) – please provide multiple files to compare or a path to a directory with files to compare.
 
 - `--analyze_all` option allows for fully automated, multiprocessed analysis of masht.blaster `--split` results. MASH sketches files and triangle distance matrices will be created in all subdirectiories of selected file, e.g.:
     ```console
