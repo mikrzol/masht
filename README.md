@@ -68,17 +68,20 @@ All tasks related to BLAST (creation of index, blasting, splitting results by GO
 
 ```txt
 --create_db
+--blast
+--num_threads
+2
+--n_jobs
+3
+--query
+../path/to/file(s)_to_blast
 --db_fasta
 ../path/to/fasta_file_to_create_index_on (usually biomart sequences)
 --name
-name_of_the_index
---blast
---query
-../path/to/file(s)_to_blast
---evalue
-1e-49
+example
 --go_slim_list
-../path/to/file(s)_with_go_terms
+--go_mart_feats
+../path/to/file/with/go_features (usually biomart features)
 --split
 ../path/to/file(s)_with_sequences_to_split_by_go_terms (usually same as --query)
 --output_dir
@@ -194,7 +197,7 @@ NB. The comparisons are made between sequence sets (multiple files) – please p
     `<file_name>` is relative to current directory, so:
 
     ```console
-    foo@bar: python3 masht mash @test/args.txt
+    foo@bar: python3 masht mash @tests/args.txt
     ```
 
     will run masht mash with arguments provided in `args.txt` file within `./tests/` directory.
