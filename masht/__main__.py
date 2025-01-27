@@ -283,40 +283,43 @@ def main():
     stats_parser.add_argument(
         '--input', type=argparse.FileType('r'), help='input file')
     '''
+    s_basic = stats_parser.add_argument_group('required arguments')
 
-    stats_parser.add_argument('in_d',
+    s_basic.add_argument('in_d',
                               help='location of 1) the folder with FASTQ or FASTA \
                            files or 2) the file with names of selected files \
                                (names are relative to package location)')
-    stats_parser.add_argument(
+    
+    s_detailed = stats_parser.add_argument_group('optional arguments')
+    s_detailed.add_argument(
         '-a', '--anova', action='store_true', help='perfom ANOVA on selected files')
-    stats_parser.add_argument('--analyze_all', action='store_true',
+    s_detailed.add_argument('--analyze_all', action='store_true',
                               help='perform full analysis on all files in the data directory and subdirectories')
-    stats_parser.add_argument(
+    s_detailed.add_argument(
         '-amm', '--anova_manova_mode', default='n', help='select mode of ANOVA to perform. Should be either \'n\' (to perform ANOVA on all parameters), an integer (for m-way ANOVA where first m columns from the groups_file will be selected) or \'repeat\' for ANOVA with repeats. Defaults to \'n\'')
-    stats_parser.add_argument(
+    s_detailed.add_argument(
         '-d', '--draw_plot', nargs=2, help='draw PCoA plot for chosen PCs. Two intigers required.')
-    stats_parser.add_argument('-f', '--formula', default=None,
+    s_detailed.add_argument('-f', '--formula', default=None,
                               help='formula to use for ANOVA or MANOVA. Required if -a or -ma was selected')
-    stats_parser.add_argument(
+    s_detailed.add_argument(
         '-g', '--groups_file', help='location of the file containing information on grouping for ANOVA or MANOVA. Required if -a or -ma was selected')
-    stats_parser.add_argument('-ma', '--manova', action='store_true',
+    s_detailed.add_argument('-ma', '--manova', action='store_true',
                               help='perfom MANOVA analysis on selected files')
-    stats_parser.add_argument('-m', '--mode', choices=[
+    s_detailed.add_argument('-m', '--mode', choices=[
                               'anova', 'manova'], help='select which model to use for analysis when `--analyze_all` was chosen.')
-    stats_parser.add_argument('-n', '--n_dimensions', default=None,
+    s_detailed.add_argument('-n', '--n_dimensions', default=None,
                               help='number of target dimensions for PCoA analysis')
-    stats_parser.add_argument('-nt', '--not_triangle', action='store_false',
+    s_detailed.add_argument('-nt', '--not_triangle', action='store_false',
                               help='signifies that the input file is a NOT a triangle matrix')
-    stats_parser.add_argument('-o', '--output_dir', default='./',
+    s_detailed.add_argument('-o', '--output_dir', default='./',
                               help='location of the output directory (default: ".")')
-    stats_parser.add_argument('-p', '--pcoa', action='store_true',
+    s_detailed.add_argument('-p', '--pcoa', action='store_true',
                               help='perform PCoA analysis and create results files')
-    stats_parser.add_argument('-pc', '--pc_number', default=4,
+    s_detailed.add_argument('-pc', '--pc_number', default=4,
                               help='Number of PCs to analyse with ANOVA. Defaults to 4.')
-    stats_parser.add_argument(
+    s_detailed.add_argument(
         '-ss', '--ss_type', choices=['1', '2', '3'], default='2', help='Type of sum of squares for ANOVA.')
-    stats_parser.add_argument('-v', '--verbose', action='store_true',
+    s_detailed.add_argument('-v', '--verbose', action='store_true',
                               help='add more descriptions of performed actions')
 
     # set function to perform when calling the command
@@ -324,12 +327,12 @@ def main():
 
     # MASH SUBCOMMAND
     mash_parser = subparsers.add_parser('mash', help='use the mash module')
-    basic = mash_parser.add_argument_group('basic use')
+    basic = mash_parser.add_argument_group('required arguments')
     basic.add_argument('in_d',
                        help='location of 1) the folder with FASTQ or FASTA \
                            files or 2) the file with names of selected files \
                                (names are relative to package location)')
-    detailed = mash_parser.add_argument_group('detailed use')
+    detailed = mash_parser.add_argument_group('optional arguments')
     detailed.add_argument(
         '-a', '--analyze_all', action='store_true', help='analyze files from all subdirectories of a given directory containing results of splitting blast results by GOs (blaster --split results)')
     detailed.add_argument('-b', '--bounds', action='store_true',
