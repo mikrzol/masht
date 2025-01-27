@@ -285,14 +285,20 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
         go_df = pd.read_csv(go_file)
 
         # create tun
+        """
         tun = (go_df['Gene stable ID'] + '|' +
                go_df['Transcript stable ID']).unique()
-
+        """
+        tun = (go_df[go_df.columns[0]] + '|' +
+               go_df[go_df.columns[1]]).unique()
+        
+        go_name = go_file.stem.replace(' ', '_')
+        
         if verbose:
-            print(f'Splitting {go_file.stem} file with {len(tun)} IDs...')
+            print(f'Splitting {go_name} file with {len(tun)} IDs...')
 
         # create output dir
-        pathlib.Path(f'{output_dir}/{go_file.stem}').mkdir(
+        pathlib.Path(f'{output_dir}/{go_name}').mkdir(
             parents=True, exist_ok=True)
 
         for blast_file in blast_files:
@@ -322,7 +328,7 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
             """
 
             # write the corresponding sequences from seq_file to output file
-            with open(f'{output_dir}/{go_file.stem}/filtered_{blast_file.stem}.fasta', 'w') as output_file:
+            with open(f'{output_dir}/{go_name}/filtered_{blast_file.stem}.fasta', 'w') as output_file:
                 for id in ids:
                     output_file.write(">{0}\n{1}".format(
                         id, '\n'.join(seq_file[id])))
