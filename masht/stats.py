@@ -218,6 +218,9 @@ def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, f
             pcs = len(df.columns)
 
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
+        
+        # this gets rid of file extensions - required because df.index also has no extensions
+        groups.index = groups.index.str.split('.').str.get(0)
 
         if anova_manova_mode == 'repeat':
             from statsmodels.stats.anova import AnovaRM
