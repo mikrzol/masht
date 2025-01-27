@@ -87,7 +87,8 @@ def _format_triangle_output(text: str) -> str:
     # read the text
     text = [line.split('\t') for line in text.strip().split('\n')][1:]
     # get sample names
-    samples = [line[0] for line in text]
+    # samples = [line[0] for line in text]
+    samples = [line[0][line[0].rfind('/')+1:] for line in text]
     # get values - lower triangle
     vals = np.zeros((len(samples), len(samples)))
     for i, line in enumerate(text):
