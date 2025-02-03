@@ -3,7 +3,7 @@ from mash import _get_files
 import pandas as pd
 
 
-def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir: pathlib.Path, formula: str or None, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False, plot: list[str] = ['1', '2'], ss_type: int = 2, triangle: bool = True, n_dim: int or None = None) -> None:
+def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir: pathlib.Path, formula: str | None, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False, plot: list[str] = ['1', '2'], ss_type: int = 2, triangle: bool = True, n_dim: int | None = None) -> None:
     """Perform standardized full analysis of all files in the data_path directory
 
     Args:
@@ -76,7 +76,7 @@ def analyze_all(data_path: pathlib.Path, mode: str, groups_file: str, output_dir
                         for subdir in subdirs)
 
 
-def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, formula: str or None, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
+def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, formula: str | None, anova_manova_mode: str = 'n', pcs: int = 4, verbose: bool = False) -> None:
     """perform MANOVA analyses of selected files
 
     Args:
@@ -115,6 +115,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
             'filtered_').str.split('.').str.get(0)
 
         groups = pd.read_csv(groups_file, sep='\t', index_col=0)
+        groups.index = groups.index.str.split('.').str.get(0)
 
         # select columns with non-zero values only
         df = df[df.columns[~(df == 0).all()]]
@@ -187,7 +188,7 @@ def manova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, 
     '''
 
 
-def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, formula: str or None, anova_manova_mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
+def anova(data_path: pathlib.Path, groups_file: str, output_dir: pathlib.Path, formula: str | None, anova_manova_mode: str = 'n', pcs: int = 4, ss_type: int = 2, triangle: bool = True, verbose: bool = False) -> None:
     """perform ANOVA (either with repeats or n-way) on data in data_path file
 
     Args:
@@ -355,7 +356,7 @@ def plot_pcoa(res, names: list[str], output_dir: pathlib.Path, chosen_pcs: list[
     '''
 
 
-def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int or None = None, plot: list[str] = [], triangle: bool = True, verbose: bool = False) -> str:
+def pcoa(data_path: pathlib.Path, output_dir: pathlib.Path, n_dim: int | None = None, plot: list[str] = [], triangle: bool = True, verbose: bool = False) -> str:
     """perform PCoA of data obtained in the mash.triangle function
 
     Args:
