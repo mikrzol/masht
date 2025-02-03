@@ -129,7 +129,7 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
 
     if args.manova:
         stats.manova(data_path=pcoa_path or data_path,
-                     groups_file=args.groups_file, anova_manova_mode=args.anova_manova_mode, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
+                     groups_file=args.groups_file, anova_manova_mode=args.anova_manova_mode, formula=args.formula, output_dir=args.output_dir, pcs=args.pc_number, verbose=args.verbose)
 
 
 def perform_mash(args: argparse.ArgumentParser) -> None:
