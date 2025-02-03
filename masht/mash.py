@@ -2,10 +2,12 @@ import subprocess
 import pathlib
 
 
-def _multiproc_task(subdirs: list[pathlib.Path]):
-    sketch_path = sketch('bin/', data_path=subdirs,
+def _multiproc_task(args: list):
+    """Helper function for multiprocessing"""
+    subdirs, bin_path = args
+    sketch_path = sketch(bin_path=bin_path, data_path=subdirs,
                          output_path=subdirs, verbose=verb)
-    triangle('bin/', data_path=pathlib.Path(sketch_path),
+    triangle(bin_path=bin_path, data_path=pathlib.Path(sketch_path),
              output_path=subdirs, verbose=verb)
 
 
@@ -26,9 +28,17 @@ def analyze_all(go_dir: str, verbose: bool = False):
     # workaround for passing verbose to _multiproc_task
     global verb
     verb = verbose
+    
+    # handle the bin path
+    from itertools import repeat
+    from shutil import which
+    if which('mash'):
+        bin_path = which('mash').rstrip('mash')
+    else:
+        bin_path = 'bin/'
 
     with multiprocessing.Pool() as pool:
-        pool.map(_multiproc_task, subdirs)
+        pool.map(_multiproc_task, list(zip(subdirs, repeat(bin_path))))
 
 
 def _error_present(proc: subprocess.CompletedProcess, masht_subcommand: str) -> bool:
