@@ -147,9 +147,6 @@ def perform_mash(args: argparse.ArgumentParser) -> None:
         bin_path = which('mash').rstrip('mash')
     else:
         bin_path = 'bin/'
-        
-    # !!! DEBUG !!!
-    print(f'bin_path: {bin_path}')
 
     # ORDER MATTERS
     # sketch
