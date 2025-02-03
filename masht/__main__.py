@@ -91,9 +91,6 @@ def perform_stats(args: argparse.ArgumentParser) -> None:
 
     data_path = pathlib.Path(args.in_d)
 
-    # TESTING - remove paths later
-    bin_path = 'bin/'
-
     if args.n_dimensions:
         args.n_dimensions = int(args.n_dimensions)
     if args.pc_number:
@@ -144,8 +141,15 @@ def perform_mash(args: argparse.ArgumentParser) -> None:
 
     data_path = pathlib.Path(args.in_d)
 
-    # TESTING - remove paths later
-    bin_path = 'bin/'
+    # handle the bin path
+    from shutil import which
+    if which('mash'):
+        bin_path = which('mash').rstrip('mash')
+    else:
+        bin_path = 'bin/'
+        
+    # !!! DEBUG !!!
+    print(f'bin_path: {bin_path}')
 
     # ORDER MATTERS
     # sketch
