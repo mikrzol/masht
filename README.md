@@ -92,9 +92,17 @@ path/to/output_dir
 The same result can be achieved by using the ```--analyze_all``` option, template arguments file for which is provided in the `tests/` directory.
 
 #### Inputs
-- `--db_fasta` - a FASTA file
-- `--query` - a file with sequences (e.g., FASTA), a directory with files with sequences in it or a .txt file with paths to the files to process
-- `--go_slim_list` - a text file with annotations. Last column will be used for splitting
+- `--db_fasta` – a FASTA file
+- `--query` – a file with sequences (e.g., FASTA), a directory with files with sequences in it or a .txt file with paths to the files to process
+- `--go_slim_list` – a text file with annotations. Last column will be used for splitting
+- `--go_mart_feats` – a text file with features to use for splitting. The minimal format for the (tab-delimited) file is:
+
+|Gene stable ID|Transcript stable ID|GO/GOSlim term accession/name|
+|---|---|---|
+
+**NB. The last column will be used for splitting.**
+
+Please run the `python3 masht blaster -o ./ --download_biomart_files` command to download appropriately formatted files if the minimal structure is unclear.
 
 #### blaster options (flags)
 
