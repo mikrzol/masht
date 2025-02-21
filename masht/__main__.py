@@ -387,6 +387,8 @@ def main():
             global_parser.error(
                 'either --download_biomart_files or --analyze_all must be used or --go_slim_list and --go_mart_feats must be given together!')
             return
+        if args.query and (args.split is None):
+            args.split = args.query
 
     # VARIABLES
     # check if output dir exists and create one if necessary
