@@ -1,7 +1,0 @@
-C:\IGR\masht\pcoa_tests\aov_triangle_pcoa_coords.tsv
--ma
--g
-tests/anova_tests/test_groups_file.tsv
--v
--o
-pcoa_tests/

@@ -1,6 +1,0 @@
-tests/files.txt
--s
--o maria
--v
--i
--t

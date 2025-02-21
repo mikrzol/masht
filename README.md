@@ -93,7 +93,7 @@ path/to/output_dir
 --verbose
 ```
 
-The same result can be achieved by using the ```--analyze_all``` option, template arguments file for which is provided in the `tests/` directory.
+The same result can be achieved by using the ```--analyze_all``` option, template arguments file for which is provided in the main directory.
 
 #### Inputs
 - `--db_fasta` – a FASTA file
