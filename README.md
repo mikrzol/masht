@@ -1,5 +1,4 @@
 # MASHt - MASH toolkit
-[//]: # (#TODO update readme mentioning the requirement to have term to group by as -1 in go_mart_to_go_csvs)
 
 Python toolkit for the MASH tool and streamlined statistical analysis for Linux.
 
@@ -24,7 +23,8 @@ It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA
   - joblib
 - R
   - broom
-- mash (in binary in the masht/bin/ directory, as included)
+- mash (included in the bin/ directory or installed in the environment)
+- blast (installed in the environment)
 - Linux OS (commands from the `stats` subcommand can also be run on Windows)
 
 ### Installation
