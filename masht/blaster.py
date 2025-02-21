@@ -269,6 +269,7 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
             verbose (bool, optional): whether to increase verbosity. Defaults to 'False'.
     """
     from joblib import Parallel, delayed
+    import re
 
     if verbose:
         print('Splitting blast results by GOs...\n')
@@ -292,7 +293,8 @@ def split_blast_to_fastas(blast_file_path: str or list[str], seqs_file_path: str
         tun = (go_df[go_df.columns[0]] + '|' +
                go_df[go_df.columns[1]]).unique()
         
-        go_name = go_file.stem.replace(' ', '_')
+        #go_name = go_file.stem.replace(' ', '_')
+        go_name = re.sub(r'[^A-z0-9_]', '_', go_file.stem)
         
         if verbose:
             print(f'Splitting {go_name} file with {len(tun)} IDs...')
