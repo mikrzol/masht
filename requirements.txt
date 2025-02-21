@@ -1,13 +1,13 @@
-##### Basic requirements
-mash            # can use a standalone binary file instead
-blast           # required for masht::blaster
-
 #### Python requirements
 scikit-bio      # required for stats::pcoa
 pandas
 numpy
 rpy2
 joblib
+
+##### System requirements
+mash            # can use a standalone binary file instead
+blast           # required for masht::blaster
 
 ##### R requirements
 base
