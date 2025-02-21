@@ -8,7 +8,7 @@ This toolkit serves to automate work that includes MASH [Ondov et al.](https://g
 
 The blast module allows for multiprocessed automatized separation of transcripts/ reads by GO (gene ontology) terms. 
 
-It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA/MANOVA analysis on the results of the aforementioned separation to determine if there are statistically significant differences in gene sequences between different groups of observations.
+It also streamlines PCoA analysis on MASH distance matrices and performing ANOVA/MANOVA analysis on the results of the aforementioned separation to determine if there are statistically significant differences in transcript sequences between different groups of observations.
 
 ## Getting started
 
