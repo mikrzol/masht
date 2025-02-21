@@ -64,6 +64,10 @@ Since MASHt can take in arguments in a file preceded by `@` (e.g. `@args.txt`), 
 
 This **optional** step enables splitting observations by their GO annotations.
 
+The default source of coding gene sequences and GO annotations is [Ensembl Biomart](https://plants.ensembl.org/info/data/biomart/index.html). The user can provide their own sequences and features files, but they have to be formatted in a specific way. The files can be downloaded using the `--download_biomart_files` option. 
+
+**NB. The `--download_biomart_files` option fetches *H vulgare* features and sequences by default. Advanced users can change the .xml query files in the `data/` directory to get feats and sequences from organisms of choice. Alternatively, you can download the sequence and feature files from Ensembl Biomart before using MASHt and use them in the analysis.**
+
 All tasks related to BLAST (creation of index, blasting, splitting results by GO terms etc.) can be performed with one command. This way paths for input files for subsequent steps are inferred automatically. Example file with arguments would look like this:
 
 ```txt
@@ -101,6 +105,7 @@ The same result can be achieved by using the ```--analyze_all``` option, templat
 |---|---|---|
 
 **NB. The last column will be used for splitting.**
+The columns can theoretically have any names, but using informative names is recommended.
 
 Please run the `python3 masht blaster -o ./ --download_biomart_files` command to download appropriately formatted files if the minimal structure is unclear.
 
@@ -195,7 +200,7 @@ NB. The comparisons are made between sequence sets (multiple files) – please p
     foo@bar: python3 masht mash <dir_with_input_sequences> -s -t -i -o <output_dir>
     ```
 
-    will create the sketch (.msh) file of all files within `dir_with_input_sequences/`, show information on them to the console and generate a `sketches_triangle.tsv` report file. The files will be stored in the `output_dir/`.
+    will create the sketch (.msh) file of all files within `dir_with_input_sequences/` (not recursively), show information on them to the console and generate a `sketches_triangle.tsv` report file. The files will be stored in the `output_dir/`.
 - parameters and options can be specified in a text file. Use `@<file_name>` to point to the file:
 
     ```console
